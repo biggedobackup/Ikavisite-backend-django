@@ -220,7 +220,7 @@
           </select>
         </div>
         <div><label class="vvm-label">Departement</label>
-          <select class="vvm-select" name="departement">
+          <select class="vvm-select" name="departement" id="departementSelect" onchange="filterPersonnelByDepartement()">
             <option value="">Selectionner</option>
             {% for d in departements %}<option value="{{ d.pk }}" {% if d.pk == item.personnel.departement_id %}selected{% endif %}>{{ d.nom }}</option>{% endfor %}
           </select>
@@ -265,6 +265,46 @@ function fillDepartement() {
   var dep = sel.options[sel.selectedIndex]?.getAttribute('data-departement-id');
   if (dep) document.querySelector('[name="departement"]').value = dep;
 }
+// --- Personnel / Departement bidirectionnel ---
+var _allPersonnelOptions = [];
+(function() {
+  var sel = document.getElementById('personnelSelect');
+  if (!sel) return;
+  for (var i = 1; i < sel.options.length; i++) {  // skip placeholder
+    _allPersonnelOptions.push({
+      value: sel.options[i].value,
+      text: sel.options[i].text,
+      departementId: sel.options[i].getAttribute('data-departement-id') || ''
+    });
+  }
+})();
+function filterPersonnelByDepartement() {
+  var depSelect = document.getElementById('departementSelect');
+  var persSelect = document.getElementById('personnelSelect');
+  if (!depSelect || !persSelect) return;
+  var selectedDep = depSelect.value;
+  // Rebuild personnel dropdown
+  persSelect.innerHTML = '';
+  var ph = document.createElement('option');
+  ph.value = ''; ph.text = 'Selectionner';
+  persSelect.appendChild(ph);
+  for (var i = 0; i < _allPersonnelOptions.length; i++) {
+    var opt = _allPersonnelOptions[i];
+    if (!selectedDep || opt.departementId === selectedDep) {
+      var el = document.createElement('option');
+      el.value = opt.value;
+      el.text = opt.text;
+      el.setAttribute('data-departement-id', opt.departementId);
+      persSelect.appendChild(el);
+    }
+  }
+}
+// Au chargement, si un département est déjà sélectionné, filtrer
+(function() {
+  var depSel = document.getElementById('departementSelect');
+  if (depSel && depSel.value) filterPersonnelByDepartement();
+})();
+// --- Fin bidirectionnel ---
 (function() {
   function setupSignaturePad(canvasId, inputId) {
     var canvas = document.getElementById(canvasId);

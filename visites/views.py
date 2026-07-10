@@ -717,7 +717,7 @@ def export_excel_visites(request):
 # ─── Visites en cours ───────────────────────────────────────────────────
 
 def _encours_qs():
-    return _base_qs().filter(statut='EN_COURS')
+    return _base_qs().filter(statut__in=['EN_COURS', 'EXCEDE'])
 
 
 @login_required
