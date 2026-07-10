@@ -1,0 +1,332 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}IKAVISITE{% endblock %}</title>
+<link rel="icon" type="image/png" href="{% static 'logo.png' %}">
+<link rel="stylesheet" href="{% static 'layout.css' %}">
+<meta name="csrf-token" content="{{ csrf_token }}">
+<style>
+.ika-toast-container{position:fixed;top:1rem;right:1rem;z-index:9999;display:grid;gap:.5rem;max-width:24rem;pointer-events:none}
+.ika-toast{pointer-events:auto;display:flex;align-items:flex-start;gap:.75rem;padding:1rem 1.25rem;border-radius:1rem;box-shadow:0 10px 40px rgba(15,23,42,.12);border:1px solid #f1f5f9;font-size:.875rem;font-weight:600;line-height:1.4;animation:ika-toast-in .3s ease-out;transition:opacity .3s,transform .3s}
+.ika-toast.removing{opacity:0;transform:translateX(100%)}
+.ika-toast svg{width:1.25rem;height:1.25rem;flex-shrink:0;margin-top:.05rem}
+.ika-toast-success{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.ika-toast-success svg{color:#059669}
+.ika-toast-error{background:var(--secondary-light);color:#991b1b;border-color:#fecaca}
+.ika-toast-error svg{color:var(--secondary)}
+.ika-toast-warning{background:#fffbeb;color:#92400e;border-color:#fde68a}
+.ika-toast-warning svg{color:#d97706}
+.ika-toast-info{background:var(--primary-light);color:#1e40af;border-color:#bfdbfe}
+.ika-toast-info svg{color:var(--primary)}
+.ika-toast-close{margin-left:auto;background:none;border:none;cursor:pointer;padding:.125rem;color:inherit;opacity:.4;flex-shrink:0;transition:opacity .15s}
+.ika-toast-close:hover{opacity:.8}
+.ika-toast-close svg{width:1rem;height:1rem}
+@keyframes ika-toast-in{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+.ika-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.5);padding:1rem}
+.ika-modal-inner{background:#fff;border-radius:1.5rem;width:100%;max-width:540px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+.ika-modal-header{display:flex;align-items:flex-start;gap:.75rem;padding:1.5rem 1.5rem 0;border-bottom:none}
+.ika-modal-header h3{margin:0}
+.ika-modal-close{margin-left:auto;background:none;border:none;font-size:1.75rem;font-weight:700;color:#9ca3af;cursor:pointer;line-height:1;padding:0}
+.ika-modal-close:hover{color:#374151}
+.ika-modal-body{padding:1rem 1.5rem;overflow-y:auto;flex:1}
+.ika-modal-footer{display:flex;align-items:center;gap:.75rem;padding:1rem 1.5rem 1.5rem;border-top:1px solid #f1f5f9;margin-top:.5rem}
+.ika-notif-badge{position:absolute;top:-2px;right:-4px;background:#dc2626;color:#fff;font-size:.625rem;font-weight:900;min-width:1.125rem;height:1.125rem;display:flex;align-items:center;justify-content:center;border-radius:999px;border:2px solid #fff;pointer-events:none}
+.ika-notif-mark-all{background:none;border:none;font-size:.6875rem;font-weight:700;color:var(--primary);cursor:pointer;white-space:nowrap;padding:0}
+.ika-notif-mark-all:hover{text-decoration:underline}
+@media(max-width:639px){[class$="-actions"]{gap:.5rem!important}[class$="-actions"]>[class*="-btn-secondary"],[class$="-actions"]>[class*="-btn-outline"]{flex:1 1 calc(50% - .25rem);min-width:0;text-align:center}[class$="-actions"]>[class*="-btn-primary"]{flex:1 1 100%;margin-top:.25rem;text-align:center}}
+.ika-notif-list{max-height:20rem;overflow-y:auto}
+.ika-notif-item{display:flex;align-items:flex-start;gap:.75rem;padding:.75rem 1rem;transition:background .15s;border-bottom:1px solid #f1f5f9}
+.ika-notif-item:hover{background:#f8fafc}
+.ika-notif-item:last-child{border-bottom:none}
+.ika-notif-icon{width:2rem;height:2rem;border-radius:.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem}
+.ika-notif-icon-liste_noire{background:#fef2f2;color:#dc2626}
+.ika-notif-icon-incident{background:#fff7ed;color:#ea580c}
+.ika-notif-icon-objet_oublie{background:#faf5ff;color:#9333ea}
+.ika-notif-content{flex:1;min-width:0}
+.ika-notif-msg{font-size:.8125rem;font-weight:600;color:#0f172a;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ika-notif-date{font-size:.6875rem;font-weight:500;color:#94a3b8;margin:.125rem 0 0}
+.ika-notif-mark-read{background:none;border:none;color:#94a3b8;font-size:1.125rem;font-weight:700;cursor:pointer;padding:.125rem;line-height:1;flex-shrink:0;transition:color .15s}
+.ika-notif-mark-read:hover{color:#dc2626}
+</style>
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+{% include "sidebar.html" %}
+{% include "header.html" %}
+<main class="ika-main">
+  <div class="ika-content">
+    <div id="ika-toast-container" class="ika-toast-container"></div>
+    {% block content %}{% endblock %}
+  </div>
+</main>
+<div id="detectionModal" class="ika-modal" style="display:none" onclick="closeDetectionModal(event)">
+  <div class="ika-modal-inner" onclick="event.stopPropagation()">
+    <div style="background:#dc2626;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem">
+      <svg style="width:2.5rem;height:2.5rem;flex-shrink:0;color:#fff" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+      <div style="flex:1">
+        <h3 style="margin:0;font-size:1.25rem;font-weight:900;color:#fff" id="detectionModalTitle">Détection de personne</h3>
+        <p style="margin:.125rem 0 0;font-size:.875rem;font-weight:600;color:#fecaca" id="detectionModalSub">Cette personne a des antécédents</p>
+      </div>
+      <button type="button" onclick="closeDetectionModal()" style="background:rgba(255,255,255,.15);border:none;border-radius:.5rem;color:#fff;font-size:1.5rem;font-weight:700;cursor:pointer;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;line-height:1">&times;</button>
+    </div>
+    <div id="detectionModalBody" style="padding:1.25rem 1.5rem;overflow-y:auto;max-height:50vh"></div>
+    <div style="display:flex;align-items:center;gap:.75rem;padding:1rem 1.5rem 1.5rem;border-top:1px solid #f1f5f9">
+      <button type="button" onclick="closeDetectionModal()" style="border-radius:.75rem;border:1px solid #e2e8f0;background:#fff;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:700;color:#374151;cursor:pointer">Fermer</button>
+    </div>
+  </div>
+</div>
+<script>
+var detectionAlarmInterval = null;
+var detectionAudioCtx = null;
+
+function playDetectionTone(freq, dur, t) {
+  if (!detectionAudioCtx) return;
+  var osc = detectionAudioCtx.createOscillator();
+  var gain = detectionAudioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(freq, t);
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.01, t + dur);
+  osc.connect(gain);
+  gain.connect(detectionAudioCtx.destination);
+  osc.start(t);
+  osc.stop(t + dur);
+}
+
+function startDetectionAlarm() {
+  if (detectionAudioCtx) return;
+  detectionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function burst() {
+    if (!detectionAudioCtx) return;
+    var now = detectionAudioCtx.currentTime;
+    for (var i = 0; i < 4; i++) {
+      var t = now + i * 0.3;
+      playDetectionTone(880, 0.2, t);
+      playDetectionTone(660, 0.2, t + 0.15);
+    }
+  }
+  burst();
+  detectionAlarmInterval = setInterval(burst, 1500);
+}
+
+function stopDetectionAlarm() {
+  if (detectionAlarmInterval) { clearInterval(detectionAlarmInterval); detectionAlarmInterval = null; }
+  if (detectionAudioCtx) { detectionAudioCtx.close(); detectionAudioCtx = null; }
+}
+
+function showDetectionModal(data) {
+  stopDetectionAlarm();
+  var body = document.getElementById('detectionModalBody');
+  body.innerHTML = '';
+  if (data.groups) {
+    document.getElementById('detectionModalTitle').textContent = 'Détection de personne';
+    document.getElementById('detectionModalSub').textContent = (data.prenom || '') + ' ' + (data.nom || '') + (data.num_piece ? ' — ' + data.num_piece : '');
+    var groups = data.groups;
+    function buildSection(items, label, icon, color, typeName) {
+      if (!items || !items.length) return '';
+      var cards = items.map(function(m) {
+        return '<div class="ika-detection-card" data-type="' + typeName + '" data-pk="' + m.pk + '" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-radius:.75rem;border:1px solid ' + color.border + ';background:' + color.bg + ';padding:.75rem 1rem;margin-bottom:.5rem">' +
+          '<div><p style="font-weight:700;color:#1f2937;margin:0">' + (m.nom || '') + ' ' + (m.prenom || '') + '</p><p style="font-size:.875rem;color:#6b7280;margin:.25rem 0 0">' + (m.detail || '') + '</p></div>' +
+          '<svg style="width:1.25rem;height:1.25rem;flex-shrink:0;color:' + color.title + '" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>' +
+        '</div>';
+      }).join('');
+      return '<div style="margin-bottom:1.25rem">' +
+        '<h4 style="font-size:.8125rem;font-weight:900;color:' + color.title + ';text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:.5rem;margin:0 0 .75rem">' +
+        icon + ' ' + label + '</h4>' +
+        cards + '</div>';
+    }
+    body.innerHTML =
+      buildSection(groups.liste_noire, 'Personne trouvée dans la liste noire',
+        '<svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>',
+        {title:'#b91c1c', border:'#fecaca', bg:'#fef2f2'}, 'LISTE_NOIRE') +
+      buildSection(groups.incident, 'Personne ayant commis un incident',
+        '<svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        {title:'#c2410c', border:'#fed7aa', bg:'#fff7ed'}, 'INCIDENT') +
+      buildSection(groups.objet_oublie, 'Personne ayant déjà oublié un objet',
+        '<svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>',
+        {title:'#7e22ce', border:'#d8b4fe', bg:'#faf5ff'}, 'OBJET_OUBLIE');
+  }
+
+  document.getElementById('detectionModal').style.display = 'flex';
+  startDetectionAlarm();
+}
+
+function closeDetectionModal() {
+  stopDetectionAlarm();
+  document.getElementById('detectionModal').style.display = 'none';
+  var redirect = window.detectionRedirectUrl;
+  if (redirect) {
+    window.detectionRedirectUrl = null;
+    window.location.href = redirect;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var toggles=document.querySelectorAll('[data-toggle]');
+  var allSubmenus=document.querySelectorAll('.ika-submenu');
+  var allChevrons=document.querySelectorAll('.nav-chevron');
+  toggles.forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.preventDefault();
+      var target=document.getElementById(this.dataset.toggle);
+      if(target){
+        var isOpening=target.classList.contains('hidden');
+        allSubmenus.forEach(function(m){m.classList.add('hidden')});
+        allChevrons.forEach(function(c){c.classList.remove('open')});
+        if(isOpening){
+          target.classList.remove('hidden');
+          this.querySelector('.nav-chevron')?.classList.add('open');
+        }
+      }
+    });
+  });
+  var profileBtn=document.getElementById('profile-btn');
+  var profileDropdown=document.getElementById('profile-dropdown');
+  var notifBtn=document.getElementById('notif-btn');
+  var notifDropdown=document.getElementById('notif-dropdown');
+  function closeProfile(){if(profileDropdown){profileDropdown.classList.add('hidden');if(profileBtn)profileBtn.querySelector('.ika-chevron')?.classList.remove('open')}}
+  function closeNotif(){if(notifDropdown)notifDropdown.classList.add('hidden')}
+  if(profileBtn&&profileDropdown){
+    profileBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      closeNotif();
+      profileDropdown.classList.toggle('hidden');
+      this.querySelector('.ika-chevron')?.classList.toggle('open');
+    });
+    document.addEventListener('click',closeProfile);
+    profileDropdown.addEventListener('click',function(e){e.stopPropagation()});
+  }
+  if(notifBtn&&notifDropdown){
+    notifBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      closeProfile();
+      notifDropdown.classList.toggle('hidden')
+    });
+    document.addEventListener('click',closeNotif);
+    notifDropdown.addEventListener('click',function(e){
+      var item=e.target.closest('.ika-notif-item');
+      if(!item)return;
+      var id=item.dataset.id;
+      if(e.target.closest('.ika-notif-mark-read')){
+        e.stopPropagation();
+        var xhr=new XMLHttpRequest();
+        xhr.open('POST','/alertes/marquer-lu/'+id+'/',true);
+        xhr.setRequestHeader('X-CSRFToken',getCSRFToken());
+        xhr.onload=function(){
+          if(xhr.status===200){
+            item.remove();
+            var badge=document.querySelector('.ika-notif-badge');
+            if(badge){
+              var c=parseInt(badge.textContent)-1;
+              if(c<=0)badge.remove();else badge.textContent=c;
+            }
+            var list=document.getElementById('notif-list');
+            if(list&&!list.querySelector('.ika-notif-item')){
+              list.innerHTML='<div style="padding:2rem;text-align:center;font-size:.875rem;color:#94a3b8;font-weight:500">Aucune notification</div>';
+            }
+          }
+        };
+        xhr.send();
+      }else if(item.dataset.url){
+        e.stopPropagation();
+        var xhr=new XMLHttpRequest();
+        xhr.open('POST','/alertes/marquer-lu/'+id+'/',true);
+        xhr.setRequestHeader('X-CSRFToken',getCSRFToken());
+        xhr.onload=function(){window.location.href=item.dataset.url};
+        xhr.send();
+      }
+    });
+  }
+  document.addEventListener('click',function(e){
+    var card=e.target.closest('.ika-detection-card');
+    if(!card)return;
+    var type=card.dataset.type;
+    var pk=card.dataset.pk;
+    var urls={LISTE_NOIRE:'/liste-noire/listes/detail/'+pk+'/',INCIDENT:'/incidents/detail/'+pk+'/',OBJET_OUBLIE:'/objets-oublies/detail/'+pk+'/'};
+    if(urls[type])window.open(urls[type],'_blank');
+  });
+  var markAllBtn=document.getElementById('mark-all-read-btn');
+  if(markAllBtn){
+    markAllBtn.addEventListener('click',function(){
+      var xhr=new XMLHttpRequest();
+      xhr.open('POST','/alertes/marquer-tout-lu/',true);
+      xhr.setRequestHeader('X-CSRFToken',getCSRFToken());
+      xhr.onload=function(){
+        if(xhr.status===200){
+          var list=document.getElementById('notif-list');
+          if(list)list.innerHTML='<div style="padding:2rem;text-align:center;font-size:.875rem;color:#94a3b8;font-weight:500">Aucune notification</div>';
+          var badge=document.querySelector('.ika-notif-badge');
+          if(badge)badge.remove();
+        }
+      };
+      xhr.send();
+    });
+  }
+  function getCSRFToken(){
+    var meta=document.querySelector('meta[name="csrf-token"]');
+    return meta?meta.getAttribute('content'):'';
+  }
+  var mobileBtn=document.getElementById('mobile-menu-btn');
+  var mobileOverlay=document.getElementById('mobile-overlay');
+  var menuScrollY=0;
+  if(mobileBtn&&mobileOverlay){
+    mobileBtn.addEventListener('click',function(){
+      menuScrollY=window.scrollY;
+      document.body.style.top='-'+menuScrollY+'px';
+      mobileOverlay.classList.add('active');
+      document.body.classList.add('ika-no-scroll');
+    });
+    mobileOverlay.addEventListener('click',function(e){
+      if(e.target===mobileOverlay||e.target.closest('.ika-mobile-backdrop')){
+        mobileOverlay.classList.remove('active');
+        document.body.classList.remove('ika-no-scroll');
+        document.body.style.top='';
+        window.scrollTo(0,menuScrollY);
+      }
+    });
+  }
+  function showToast(message, level){
+    level=level||'info';
+    var icons={success:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',error:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',warning:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',info:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'};
+    var container=document.getElementById('ika-toast-container');
+    if(!container)return;
+    var toast=document.createElement('div');
+    toast.className='ika-toast ika-toast-'+level;
+    toast.innerHTML=(icons[level]||icons.info)+'<span style="flex:1">'+message+'</span><button class="ika-toast-close" onclick="this.closest(\'.ika-toast\').classList.add(\'removing\');setTimeout(function(){this.closest(\'.ika-toast\').remove()}.bind(this),300)" type="button"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+    container.appendChild(toast);
+    setTimeout(function(){if(toast.parentNode){toast.classList.add('removing');setTimeout(function(){if(toast.parentNode)toast.remove()},300)}},4000);
+  }
+  {% if messages %}
+    {% for message in messages %}
+      showToast('{{ message|escapejs }}','{{ message.tags }}');
+    {% endfor %}
+  {% endif %}
+  {% block extra_js %}{% endblock %}
+  if (window.detectionData && (window.detectionData.groups || Array.isArray(window.detectionData))) {
+    showDetectionModal(window.detectionData);
+  }
+  var wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var wsUrl = wsProto + '//' + window.location.host + '/ws/detections/';
+  var ws = new WebSocket(wsUrl);
+  ws.onmessage = function(e) {
+    try {
+      var data = JSON.parse(e.data);
+      if (data.type === 'detection') {
+        var count = data.matches ? data.matches.length : 0;
+        showToast('Détection: ' + (data.prenom || '') + ' ' + (data.nom || '') + ' correspond à ' + count + ' alerte(s)', 'warning');
+      }
+    } catch(err) {}
+  };
+  ws.onclose = function() {
+    setTimeout(function() {
+      var ws2 = new WebSocket(wsUrl);
+      ws2.onmessage = ws.onmessage;
+    }, 5000);
+  };
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Détail objet oublié - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.od>*+*{margin-top:1.5rem}
+.od-header{display:flex;flex-direction:column;gap:1rem}
+@media(min-width:640px){.od-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.od-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.od-btn svg{width:1.125rem;height:1.125rem}
+.od-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.od-btn-ghost:hover{background:#f8fafc}
+.od-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.od-btn-primary:hover{background:var(--primary-hover)}
+.od-btn-danger{background:var(--secondary);color:#fff}
+.od-btn-danger:hover{background:var(--secondary-hover)}
+.od-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+@media(min-width:640px){.od-card{padding:2rem}}
+.od-title{font-size:1.5rem;font-weight:900;color:#0f172a}
+.od-sub{font-size:.875rem;font-weight:600;color:#64748b;margin-top:.25rem}
+.od-badge{display:inline-flex;margin-top:.5rem;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.od-badge-NON_RESTITUÉ{background:#fef3c7;color:#d97706}
+.od-badge-RESTITUÉ{background:#dcfce7;color:#15803d}
+.od-badge-DÉTRUIT{background:#fee2e2;color:#dc2626}
+.od-section-title{font-size:1.125rem;font-weight:900;color:#0f172a;border-bottom:1px solid #f1f5f9;padding-bottom:.75rem}
+.od-grid{display:grid;gap:1.25rem;margin-top:1.25rem}
+@media(min-width:640px){.od-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:1024px){.od-grid-3{grid-template-columns:1fr 1fr 1fr}}
+.od-field{border-radius:1rem;background:#f8fafc;padding:1rem}
+.od-field-label{font-size:.8125rem;font-weight:700;color:#64748b}
+.od-field-value{margin-top:.5rem;font-weight:900;color:#0f172a;word-break:break-word}
+.od-field-full{grid-column:1/-1}
+.od-img{max-width:10rem;max-height:10rem;border-radius:.75rem;border:1px solid #f1f5f9;margin-top:.5rem}
+.od-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #f1f5f9}
+</style>
+{% endblock %}
+{% block content %}
+<div class="od">
+  <div class="od-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Objets oubliés</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Détail objet oublié</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Fiche de suivi de l'objet perdu.</p>
+    </div>
+    <div>
+      <a href="{% url 'liste_objets_oublies' %}" class="od-btn od-btn-ghost">Retour liste</a>
+    </div>
+  </div>
+
+  <section class="od-card">
+    <h2 class="od-title">{{ item.code|default:'' }} {{ item.nom_objet }}</h2>
+    <span class="od-badge od-badge-{{ item.statut }}">{{ item.statut }}</span>
+    <div class="od-grid" style="margin-top:1.5rem;grid-template-columns:repeat(3,1fr)">
+      <div class="od-field"><div class="od-field-label">ID</div><div class="od-field-value">{{ item.pk }}</div></div>
+      <div class="od-field"><div class="od-field-label">UUID</div><div class="od-field-value" style="word-break:break-all">{{ item.uuid }}</div></div>
+      <div class="od-field"><div class="od-field-label">Code</div><div class="od-field-value">{{ item.code|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Nom de l'objet</div><div class="od-field-value">{{ item.nom_objet }}</div></div>
+      <div class="od-field"><div class="od-field-label">Catégorie</div><div class="od-field-value">{{ item.categorie|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Statut</div><div class="od-field-value"><span class="od-badge od-badge-{{ item.statut }}">{{ item.statut }}</span></div></div>
+      <div class="od-field"><div class="od-field-label">Lieu trouvé</div><div class="od-field-value">{{ item.lieu_trouve|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Date trouvé</div><div class="od-field-value">{{ item.date_trouve|date:'d/m/Y H:i'|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Département</div><div class="od-field-value">{{ item.departement.nom|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Visite associée</div><div class="od-field-value">{% if item.visite %}<a href="{% url 'detail_visite' item.visite.pk %}" style="color:var(--primary);text-decoration:underline">Visite #{{ item.visite.pk }}</a>{% else %}-{% endif %}</div></div>
+      <div class="od-field"><div class="od-field-label">Date remise</div><div class="od-field-value">{{ item.date_remise|date:'d/m/Y H:i'|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Personne ayant récupéré</div><div class="od-field-value">{{ item.personne_recupere|default:'-' }}</div></div>
+    </div>
+  </section>
+
+  <section class="od-card">
+    <h2 class="od-section-title">Visiteur associé</h2>
+    <div class="od-grid od-grid-3">
+      <div class="od-field"><div class="od-field-label">Nom</div><div class="od-field-value">{{ item.visite.visiteur.nom|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Prénom</div><div class="od-field-value">{{ item.visite.visiteur.prenom|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Téléphone</div><div class="od-field-value">{{ item.visite.visiteur.telephone|default:'-' }}</div></div>
+    </div>
+  </section>
+
+  <section class="od-card">
+    <h2 class="od-section-title">Documents</h2>
+    <div class="od-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="od-field">
+        <div class="od-field-label">Photo de l'objet</div>
+        {% if item.photo_objet %}
+        <img src="{{ item.photo_objet }}" alt="Photo objet" class="od-img" style="cursor:pointer" onclick="window.open(this.src)" />
+        {% else %}
+        <div class="od-field-value" style="font-weight:600;color:#9ca3af">Aucun fichier</div>
+        {% endif %}
+      </div>
+      <div class="od-field">
+        <div class="od-field-label">Signature</div>
+        {% if item.signature %}
+        <img src="{{ item.signature }}" alt="Signature" class="od-img" style="cursor:pointer;background:#fff" onclick="window.open(this.src)" />
+        {% else %}
+        <div class="od-field-value" style="font-weight:600;color:#9ca3af">Aucune signature</div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="od-card">
+    <h2 class="od-section-title">Description</h2>
+    <div class="od-field od-field-full" style="margin-top:1rem">
+      <div class="od-field-value" style="white-space:pre-line">{{ item.description|default:'Aucune description.' }}</div>
+    </div>
+  </section>
+
+  <section class="od-card">
+    <h2 class="od-section-title">Audit</h2>
+    <div class="od-grid od-grid-3">
+      <div class="od-field"><div class="od-field-label">Créé le</div><div class="od-field-value">{{ item.created_at|date:'d/m/Y H:i'|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Créé par</div><div class="od-field-value">{% if item.created_by %}{{ item.created_by.get_full_name|default:item.created_by.username }}{% else %}-{% endif %}</div></div>
+      <div class="od-field"><div class="od-field-label">Dernière modification</div><div class="od-field-value">{{ item.updated_at|date:'d/m/Y H:i'|default:'-' }}</div></div>
+      <div class="od-field"><div class="od-field-label">Modifié par</div><div class="od-field-value">{% if item.updated_by %}{{ item.updated_by.get_full_name|default:item.updated_by.username }}{% else %}-{% endif %}</div></div>
+    </div>
+  </section>
+
+  <div class="od-actions">
+    {% if perms.objets_oublies.change_objetoublie %}
+    <a href="{% url 'modifier_objet_oublie' item.pk %}" class="od-btn od-btn-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Modifier
+    </a>
+    {% endif %}
+    {% if perms.objets_oublies.delete_objetoublie %}
+    <form method="post" action="{% url 'supprimer_objet_oublie' item.pk %}" onsubmit="return confirm('Supprimer &quot;{{ item.nom_objet|escapejs }}&quot; ?')" style="display:inline">
+      {% csrf_token %}
+      <button type="submit" class="od-btn od-btn-danger">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+        Supprimer
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

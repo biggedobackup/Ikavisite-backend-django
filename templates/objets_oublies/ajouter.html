@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ajouter un objet oublié - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.oa>*+*{margin-top:1.5rem}
+.oa-header{display:flex;flex-direction:column;gap:1rem}
+@media(min-width:640px){.oa-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.oa-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:1px solid #e2e8f0;background:#fff;color:#374151;cursor:pointer;text-decoration:none;text-align:center}
+.oa-btn-ghost:hover{background:#f8fafc}
+.oa-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+@media(min-width:640px){.oa-card{padding:2rem}}
+.oa-section-title{font-size:1.125rem;font-weight:900;color:#0f172a;border-bottom:1px solid #f1f5f9;padding-bottom:.75rem}
+.oa-grid{display:grid;gap:1.25rem}
+@media(min-width:640px){.oa-grid{grid-template-columns:1fr 1fr}}
+.oa-colspan{grid-column:1/-1}
+.oa-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.oa-required{color:var(--secondary)}
+.oa-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
+.oa-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.oa-input::placeholder{color:#94a3b8;font-weight:500}
+.oa-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem;box-sizing:border-box}
+.oa-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.oa-textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;resize:vertical;min-height:6rem;transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
+.oa-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.oa-upload-box{border-radius:1rem;border:2px dashed rgba(18,112,184,.3);background:rgba(232,243,252,.4);padding:1rem;text-align:center}
+.oa-upload-box img{margin:0 auto;width:6rem;height:6rem;border-radius:.75rem;object-fit:cover}
+.oa-upload-icon{margin:0 auto;width:2.5rem;height:2.5rem;color:rgba(18,112,184,.6)}
+.oa-upload-input{margin-top:.5rem;width:100%;font-size:.75rem}
+.oa-upload-input::-webkit-file-upload-button{margin-right:.5rem;border-radius:.5rem;border:none;background:var(--primary);color:#fff;padding:.25rem .75rem;font-size:.75rem;font-weight:700;cursor:pointer}
+.oa-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.oa-actions{flex-direction:row}}
+.oa-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.oa-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.oa-btn-primary:hover{background:var(--primary-hover)}
+</style>
+{% endblock %}
+{% block content %}
+<div class="oa">
+  <div class="oa-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Objets oubliés</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Ajouter un objet oublié</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Sélectionnez le visiteur puis renseignez les informations de l'objet perdu.</p>
+    </div>
+    <a href="{% url 'liste_objets_oublies' %}" class="oa-btn-ghost">Retour liste</a>
+  </div>
+
+  <form class="oa-card" method="post" action="{% url 'ajouter_objet_oublie' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h2 class="oa-section-title">Informations de l'objet</h2>
+    <div class="oa-grid" style="margin-top:1.25rem">
+      <div><label class="oa-label">Visite</label>
+        <select class="oa-select" name="visite">
+          <option value="">Sélectionner</option>
+          {% for v in visites %}<option value="{{ v.pk }}" {% if request.POST.visite|stringformat:'s' == v.pk|stringformat:'s' %}selected{% endif %}>{{ v.visiteur.nom|default:'-' }} {{ v.visiteur.prenom|default:'' }} ({{ v.date_visite|date:'d/m/Y'|default:'-' }})</option>{% endfor %}
+        </select>
+      </div>
+      <div><label class="oa-label">Nom de l'objet <span class="oa-required">*</span></label><input class="oa-input" type="text" name="nom_objet" value="{{ request.POST.nom_objet|default:'' }}" placeholder="Téléphone, clés, portefeuille..." required /></div>
+      <div><label class="oa-label">Catégorie</label>
+        <select class="oa-select" name="categorie">
+          <option value="">Sélectionner</option>
+          <option value="Électronique" {% if request.POST.categorie == 'Électronique' %}selected{% endif %}>Électronique</option>
+          <option value="Vêtement" {% if request.POST.categorie == 'Vêtement' %}selected{% endif %}>Vêtement</option>
+          <option value="Papiers" {% if request.POST.categorie == 'Papiers' %}selected{% endif %}>Papiers</option>
+          <option value="Sac" {% if request.POST.categorie == 'Sac' %}selected{% endif %}>Sac</option>
+          <option value="Bijou" {% if request.POST.categorie == 'Bijou' %}selected{% endif %}>Bijou</option>
+          <option value="Autre" {% if request.POST.categorie == 'Autre' %}selected{% endif %}>Autre</option>
+        </select>
+      </div>
+      <div><label class="oa-label">Lieu trouvé</label><input class="oa-input" type="text" name="lieu_trouve" value="{{ request.POST.lieu_trouve|default:'' }}" placeholder="Hall d'accueil, salle d'attente..." /></div>
+      <div><label class="oa-label">Date trouvé</label><input class="oa-input" type="datetime-local" name="date_trouve" value="{{ request.POST.date_trouve|default:'' }}" /></div>
+      <div><label class="oa-label">Département</label>
+        <select class="oa-select" name="departement">
+          <option value="">Sélectionner</option>
+          {% for d in departements %}<option value="{{ d.pk }}" {% if request.POST.departement|stringformat:'s' == d.pk|stringformat:'s' %}selected{% endif %}>{{ d.nom }}</option>{% endfor %}
+        </select>
+      </div>
+      <div><label class="oa-label">Date remise au propriétaire</label><input class="oa-input" type="datetime-local" name="date_remise" value="{{ request.POST.date_remise|default:'' }}" /></div>
+      <div><label class="oa-label">Personne ayant récupéré</label><input class="oa-input" type="text" name="personne_recupere" value="{{ request.POST.personne_recupere|default:'' }}" placeholder="Nom de la personne" /></div>
+      <div><label class="oa-label">Photo de l'objet</label>
+        <div class="oa-upload-box">
+          <img id="photoPreview" style="display:none;width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />
+          <svg class="oa-upload-icon" id="photoIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <input class="oa-upload-input" type="file" name="photo_objet" accept="image/*" onchange="previewPhoto(this)" />
+        </div>
+      </div>
+      <div class="oa-colspan"><label class="oa-label">Description</label><textarea class="oa-textarea" rows="4" name="description" placeholder="Couleur, marque, particularités...">{{ request.POST.description|default:'' }}</textarea></div>
+    </div>
+
+    <div class="oa-actions">
+      <a href="{% url 'liste_objets_oublies' %}" class="oa-btn-ghost">Annuler</a>
+      <button type="submit" class="oa-btn oa-btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<script>
+function previewPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var preview = document.getElementById('photoPreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    var icon = document.getElementById('photoIcon');
+    if (icon) icon.style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% load static %}
+{% load user_tags %}
+<header class="ika-header">
+  <div class="ika-header-left">
+    <button id="mobile-menu-btn" class="ika-mobile-menu-btn" aria-label="Menu">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div class="ika-search">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.35-5.15a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg>
+      <input type="search" placeholder="Rechercher un visiteur" />
+    </div>
+  </div>
+
+  <div class="ika-header-right">
+    <div style="position:relative">
+      <button id="notif-btn" class="ika-header-btn" title="Notifications">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/></svg>
+        {% if nb_alertes_non_lues > 0 %}<span class="ika-notif-badge">{{ nb_alertes_non_lues }}</span>{% endif %}
+      </button>
+      <div id="notif-dropdown" class="ika-notif-dropdown hidden">
+        <div class="ika-notif-header">
+          <h2 style="font-size:.875rem;font-weight:900;color:#0f172a">Notifications</h2>
+          {% if alertes_non_lues %}
+          <button id="mark-all-read-btn" class="ika-notif-mark-all" title="Tout marquer comme lu">Tout lu</button>
+          {% endif %}
+        </div>
+        <div id="notif-list" class="ika-notif-list">
+          {% for alerte in alertes_non_lues %}
+          {% if alerte.type == 'LISTE_NOIRE' %}
+          {% url 'detail_liste_noire' alerte.entite_id as notif_url %}
+          {% elif alerte.type == 'INCIDENT' %}
+          {% url 'detail_incident' alerte.entite_id as notif_url %}
+          {% elif alerte.type == 'OBJET_OUBLIE' %}
+          {% url 'detail_objet_oublie' alerte.entite_id as notif_url %}
+          {% endif %}
+          <div class="ika-notif-item" data-id="{{ alerte.pk }}" data-url="{{ notif_url }}">
+            <div class="ika-notif-icon ika-notif-icon-{{ alerte.type|lower }}">
+              {% if alerte.type == 'LISTE_NOIRE' %}&#x1F512;{% elif alerte.type == 'INCIDENT' %}&#x26A0;{% else %}&#x1F4E6;{% endif %}
+            </div>
+            <div class="ika-notif-content">
+              <p class="ika-notif-msg">{{ alerte.message }}</p>
+              <p class="ika-notif-date">{{ alerte.created_at|date:'d/m/Y H:i' }}</p>
+            </div>
+            <button class="ika-notif-mark-read" data-id="{{ alerte.pk }}" title="Marquer comme lu">&times;</button>
+          </div>
+          {% empty %}
+          <div style="padding:2rem;text-align:center;font-size:.875rem;color:#94a3b8;font-weight:500">Aucune notification</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div style="position:relative">
+      <button id="profile-btn" class="ika-profile-btn">
+        <div class="ika-profile-info">
+          <p class="ika-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
+          <p class="ika-profile-role">{% user_role request.user %}</p>
+        </div>
+        <div class="ika-avatar">{{ request.user.get_full_name|first|default:request.user.username|first }}</div>
+        <svg class="ika-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="profile-dropdown" class="ika-dropdown hidden">
+        <div class="ika-dropdown-header">
+          <p style="font-size:.875rem;font-weight:900;color:#0f172a">{{ request.user.get_full_name|default:request.user.username }}</p>
+          <p style="font-size:.75rem;font-weight:600;color:var(--primary)">{% user_role request.user %}</p>
+        </div>
+        <a href="{% url 'profil' %}" class="ika-dropdown-item">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A8.966 8.966 0 0112 15c2.21 0 4.233.8 5.879 2.129M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Profil
+        </a>
+        <a href="{% url 'deconnexion' %}" class="ika-dropdown-item danger">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Déconnexion
+        </a>
+      </div>
+    </div>
+  </div>
+</header>

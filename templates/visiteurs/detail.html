@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Détail visiteur - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.vtrd>*+*{margin-top:1.5rem}
+.vtrd-header{display:flex;flex-direction:column;gap:1rem}
+@media(min-width:640px){.vtrd-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.vtrd-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.vtrd-btn svg{width:1.125rem;height:1.125rem}
+.vtrd-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.vtrd-btn-ghost:hover{background:#f8fafc}
+.vtrd-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+@media(min-width:640px){.vtrd-card{padding:2rem}}
+.vtrd-identity{display:flex;align-items:flex-start;gap:1rem}
+.vtrd-avatar{display:flex;width:4rem;height:4rem;align-items:center;justify-content:center;border-radius:1rem;background:var(--primary-light);color:var(--primary);font-size:1.25rem;font-weight:900;flex-shrink:0;overflow:hidden}
+.vtrd-avatar img{width:100%;height:100%;object-fit:cover}
+.vtrd-name{font-size:1.5rem;font-weight:900;color:#0f172a}
+.vtrd-badge{display:inline-flex;margin-top:.25rem;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.vtrd-badge-ACTIF{background:var(--primary-light);color:var(--primary)}
+.vtrd-badge-INACTIF{background:var(--secondary-light);color:var(--secondary)}
+.vtrd-section-title{font-size:1.125rem;font-weight:900;color:#0f172a;display:block;border-bottom:1px solid #f1f5f9;padding-bottom:.5rem;margin-bottom:.75rem}
+.vtrd-grid{display:grid;gap:1.25rem;margin-top:1.5rem}
+@media(min-width:640px){.vtrd-grid{grid-template-columns:1fr 1fr}}
+.vtrd-field{border-radius:1rem;background:#f8fafc;padding:1rem}
+.vtrd-field-label{font-size:.8125rem;font-weight:700;color:#64748b}
+.vtrd-field-value{margin-top:.5rem;font-weight:900;color:#0f172a;word-break:break-all}
+.vtrd-image-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.vtrd-image-box{border-radius:1rem;background:#f8fafc;padding:1rem}
+.vtrd-image-box img{width:100%;height:8rem;object-fit:cover;border-radius:.75rem;border:1px solid #f1f5f9}
+.vtrd-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.vtrd-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.vtrd-table thead{background:#f8fafc}
+.vtrd-table thead th{text-align:left;padding:.75rem 1.25rem;font-weight:700;color:#64748b;white-space:nowrap;font-size:.75rem}
+.vtrd-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.vtrd-table tbody tr:hover{background:#f8fafc}
+.vtrd-table tbody tr:last-child{border-bottom:none}
+.vtrd-table tbody td{padding:.75rem 1.25rem;color:#475569;vertical-align:middle}
+.vtrd-doc-badge{display:inline-flex;border-radius:.5rem;background:#f1f5f9;padding:.25rem .625rem;font-size:.6875rem;font-weight:700;color:#475569}
+.vtrd-overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.85);padding:1.5rem}
+.vtrd-overlay-inner{display:flex;height:100%;width:100%;max-width:72rem;flex-direction:column}
+.vtrd-overlay-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem;color:#fff}
+.vtrd-overlay-top p{font-size:.875rem;font-weight:900}
+.vtrd-overlay-top span{font-size:.75rem;opacity:.6}
+.vtrd-overlay-close{border-radius:.75rem;background:rgba(255,255,255,.1);padding:.5rem 1rem;font-size:.875rem;font-weight:900;color:#fff;border:none;cursor:pointer}
+.vtrd-overlay-close:hover{background:rgba(255,255,255,.2)}
+.vtrd-overlay-body{position:relative;display:flex;min-height:0;flex:1;align-items:center;justify-content:center;border-radius:1.5rem;background:rgba(255,255,255,.05);padding:.75rem}
+.vtrd-overlay-nav{position:absolute;z-index:10;border-radius:9999px;background:rgba(255,255,255,.9);padding:.75rem 1rem;font-size:1.25rem;font-weight:900;color:#0f172a;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:none;cursor:pointer;line-height:1}
+.vtrd-overlay-nav:hover{background:#fff}
+.vtrd-overlay-prev{left:.75rem}
+.vtrd-overlay-next{right:.75rem}
+.vtrd-overlay-body img{max-height:100%;max-width:100%;border-radius:1rem;object-fit:contain;box-shadow:0 10px 25px rgba(0,0,0,.3)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vtrd">
+  <div class="vtrd-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Visiteurs</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Detail du visiteur</h1>
+    </div>
+    <a href="{% url 'liste_visiteurs' %}" class="vtrd-btn vtrd-btn-ghost">Retour</a>
+  </div>
+
+  <section class="vtrd-card">
+    <div class="vtrd-identity">
+      {% if item.photo %}
+      <div class="vtrd-avatar"><img src="{{ item.photo.url }}" alt="Photo {{ item.prenom }} {{ item.nom }}" /></div>
+      {% else %}
+      <span class="vtrd-avatar">{{ item.prenom|first|upper }}{{ item.nom|first|upper }}</span>
+      {% endif %}
+      <div>
+        <h2 class="vtrd-name">{{ item.prenom }} {{ item.nom }}</h2>
+        <span class="vtrd-badge vtrd-badge-{{ item.statut }}">{{ item.statut }}</span>
+        {% if item.piece_identite %}<span class="vtrd-doc-badge" style="margin-left:.5rem">{{ item.piece_identite }}</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="vtrd-grid">
+      <span class="vtrd-section-title" style="grid-column:1/-1">Identite</span>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Nom</div>
+        <div class="vtrd-field-value">{{ item.nom }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Prenom</div>
+        <div class="vtrd-field-value">{{ item.prenom }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Genre</div>
+        <div class="vtrd-field-value">{{ item.genre|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Date de naissance</div>
+        <div class="vtrd-field-value">{{ item.date_naissance|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Lieu de naissance</div>
+        <div class="vtrd-field-value">{{ item.lieu_naissance|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Nationalite</div>
+        <div class="vtrd-field-value">{{ item.nationalite|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Profession</div>
+        <div class="vtrd-field-value">{{ item.profession|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Telephone</div>
+        <div class="vtrd-field-value">{{ item.telephone|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Email</div>
+        <div class="vtrd-field-value">{{ item.email|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field" style="grid-column:1/-1">
+        <div class="vtrd-field-label">Adresse</div>
+        <div class="vtrd-field-value">{{ item.adresse|default:'-' }}</div>
+      </div>
+
+      <span class="vtrd-section-title" style="grid-column:1/-1;margin-top:1rem">Document d'identite</span>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Type de document</div>
+        <div class="vtrd-field-value">{{ item.piece_identite|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Numero</div>
+        <div class="vtrd-field-value">{{ item.numero_piece|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Numero NIP</div>
+        <div class="vtrd-field-value">{{ item.numero_nip|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Pays de delivrance</div>
+        <div class="vtrd-field-value">{{ item.pays_delivrance|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Date de delivrance</div>
+        <div class="vtrd-field-value">{{ item.date_delivrance|default:'-' }}</div>
+      </div>
+
+      <span class="vtrd-section-title" style="grid-column:1/-1;margin-top:1rem">Fichiers</span>
+      <div class="vtrd-image-box">
+        <div class="vtrd-field-label">Photo</div>
+        <div style="margin-top:.5rem">
+          {% if item.photo %}
+          <img src="{{ item.photo.url }}" alt="Photo" style="cursor:pointer" onclick="openLightbox(0)" />
+          {% else %}
+          <span style="color:#94a3b8;font-style:italic;font-size:.8125rem">Aucun fichier</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="vtrd-image-box">
+        <div class="vtrd-field-label">Document recto</div>
+        <div style="margin-top:.5rem">
+          {% if item.document_recto %}
+          <img src="{{ item.document_recto.url }}" alt="Recto" style="cursor:pointer" onclick="openLightbox(1)" />
+          {% else %}
+          <span style="color:#94a3b8;font-style:italic;font-size:.8125rem">Aucun fichier</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="vtrd-image-box">
+        <div class="vtrd-field-label">Document verso</div>
+        <div style="margin-top:.5rem">
+          {% if item.document_verso %}
+          <img src="{{ item.document_verso.url }}" alt="Verso" style="cursor:pointer" onclick="openLightbox(2)" />
+          {% else %}
+          <span style="color:#94a3b8;font-style:italic;font-size:.8125rem">Aucun fichier</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <span class="vtrd-section-title" style="grid-column:1/-1;margin-top:1rem">Systeme</span>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Cree le</div>
+        <div class="vtrd-field-value">{{ item.created_at|date:'d/m/Y H:i'|default:'-' }}</div>
+      </div>
+      <div class="vtrd-field">
+        <div class="vtrd-field-label">Derniere modification</div>
+        <div class="vtrd-field-value">{{ item.updated_at|date:'d/m/Y H:i'|default:'-' }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vtrd-table-wrap">
+    <div style="padding:1rem 1.25rem;border-bottom:1px solid #f1f5f9">
+      <h3 style="font-size:1.125rem;font-weight:900;color:#0f172a;margin:0">Historique des visites</h3>
+    </div>
+    {% if visites %}
+    <table class="vtrd-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Motif</th>
+          <th>Personnel</th>
+          <th>Departement</th>
+          <th>Porte</th>
+          <th>Arrivee</th>
+          <th>Sortie</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visites %}
+        <tr>
+          <td style="font-weight:900;color:var(--primary)">{{ forloop.counter }}</td>
+          <td style="font-weight:600;color:#0f172a">{{ v.motif|default:'-' }}</td>
+          <td>{% if v.personnel %}{{ v.personnel.prenom }} {{ v.personnel.nom }}{% else %}-{% endif %}</td>
+          <td>{% if v.personnel and v.personnel.departement %}{{ v.personnel.departement.nom }}{% else %}-{% endif %}</td>
+          <td>{{ v.porte_entree.titre|default:'-' }}</td>
+          <td>{% if v.date_visite %}{{ v.date_visite|date:'d/m/Y' }} {{ v.heure_arrivee|time:'H:i' }}{% else %}-{% endif %}</td>
+          <td>{% if v.date_depart %}{{ v.date_depart|date:'d/m/Y' }} {{ v.heure_depart|time:'H:i' }}{% else %}-{% endif %}</td>
+          <td><span class="vtrd-doc-badge">{{ v.statut }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:2rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8">Aucune visite enregistree pour ce visiteur.</div>
+    {% endif %}
+  </section>
+</div>
+
+<div id="lightbox" class="vtrd-overlay" style="display:none" onclick="closeLightbox(event)">
+  <div class="vtrd-overlay-inner" onclick="event.stopPropagation()">
+    <div class="vtrd-overlay-top">
+      <div><p id="lbLabel">Photo</p><span id="lbCounter">1 / 1</span></div>
+      <button class="vtrd-overlay-close" onclick="closeLightbox()">Fermer</button>
+    </div>
+    <div class="vtrd-overlay-body">
+      <button class="vtrd-overlay-nav vtrd-overlay-prev" onclick="prevImage()">‹</button>
+      <img id="lbImage" src="" alt="" />
+      <button class="vtrd-overlay-nav vtrd-overlay-next" onclick="nextImage()">›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var images = (function() {
+  var arr = [];
+  {% if item.photo %}arr.push({src: '{{ item.photo.url }}', label: 'Photo'});{% endif %}
+  {% if item.document_recto %}arr.push({src: '{{ item.document_recto.url }}', label: 'Document recto'});{% endif %}
+  {% if item.document_verso %}arr.push({src: '{{ item.document_verso.url }}', label: 'Document verso'});{% endif %}
+  return arr;
+})();
+var currentIdx = 0;
+
+function openLightbox(idx) {
+  if (images.length === 0) return;
+  currentIdx = idx;
+  updateLightbox();
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox(e) {
+  document.getElementById('lightbox').style.display = 'none';
+}
+function updateLightbox() {
+  var img = images[currentIdx];
+  document.getElementById('lbImage').src = img.src;
+  document.getElementById('lbLabel').textContent = img.label;
+  document.getElementById('lbCounter').textContent = (currentIdx + 1) + ' / ' + images.length;
+}
+function prevImage() {
+  currentIdx = (currentIdx - 1 + images.length) % images.length;
+  updateLightbox();
+}
+function nextImage() {
+  currentIdx = (currentIdx + 1) % images.length;
+  updateLightbox();
+}
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('lightbox').style.display !== 'flex') return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') prevImage();
+  if (e.key === 'ArrowRight') nextImage();
+});
+</script>
+{% endblock %}

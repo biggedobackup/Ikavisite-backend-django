@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+{% load user_tags %}
+{% block title %}Utilisateurs - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.ut>*+*{margin-top:1.5rem}
+.ut-header{display:flex;flex-direction:column;gap:1.25rem}
+@media(min-width:1024px){.ut-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.ut-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.ut-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.ut-btn svg{width:1rem;height:1rem}
+.ut-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.ut-btn-primary:hover{background:var(--primary-hover)}
+.ut-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.ut-btn-secondary:hover{background:var(--secondary-light)}
+.ut-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.ut-btn-outline:hover{background:var(--primary-light)}
+.ut-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+@media(min-width:1024px){.ut-filters{grid-template-columns:1fr 220px auto}}
+.ut-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.ut-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.ut-input::placeholder{color:#94a3b8;font-weight:500}
+.ut-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.ut-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.ut-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.ut-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.ut-table thead{background:var(--primary-light)}
+.ut-table thead th{text-align:left;padding:1rem 1.25rem;font-weight:900;color:var(--primary);white-space:nowrap}
+.ut-table thead th:last-child{text-align:right}
+.ut-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.ut-table tbody tr:hover{background:#f8fafc}
+.ut-table tbody tr:last-child{border-bottom:none}
+.ut-table tbody td{padding:1rem 1.25rem;color:#475569;vertical-align:middle}
+.ut-name{font-weight:900;color:#0f172a}
+.ut-sub{font-size:.75rem;color:#64748b}
+.ut-badge{display:inline-flex;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.ut-badge-actif{background:var(--primary-light);color:var(--primary)}
+.ut-badge-inactif{background:var(--secondary-light);color:var(--secondary)}
+.ut-role-badge{display:inline-flex;border-radius:.5rem;padding:.2rem .6rem;font-size:.625rem;font-weight:900}
+.ut-role-super{background:#fef3c7;color:#92400e}
+.ut-role-staff{background:#dbeafe;color:#1e40af}
+.ut-role-user{background:#f1f5f9;color:#475569}
+.ut-role-grp{background:#e0f2fe;color:#0369a1}
+.ut-action-group{display:flex;justify-content:flex-end;gap:.375rem}
+.ut-action-btn{display:inline-flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:.5rem;border:1px solid #e2e8f0;color:#64748b;background:#fff;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-decoration:none}
+.ut-action-btn:hover{background:#f1f5f9}
+.ut-action-btn-edit{border-color:rgba(18,112,184,.2);color:var(--primary)}
+.ut-action-btn-edit:hover{background:var(--primary-light)}
+.ut-action-btn-delete{border-color:rgba(229,27,53,.2);color:var(--secondary)}
+.ut-action-btn-delete:hover{background:var(--secondary-light)}
+.ut-action-btn svg{width:1rem;height:1rem}
+.ut-empty{text-align:center;padding:3rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8}
+.ut-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.ut-pagination-info{font-size:.8125rem;font-weight:600;color:#64748b}
+.ut-pagination-steps{display:flex;align-items:center;gap:.25rem}
+.ut-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.ut-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.ut-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.ut-btn-filter{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;background:var(--primary);color:#fff;transition:background .15s,box-shadow .15s;white-space:nowrap}.ut-btn-filter:hover{background:var(--primary-hover);box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ut">
+  <div class="ut-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Sécurité &amp; Personnes</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Utilisateurs</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Gestion des comptes utilisateurs du système.</p>
+    </div>
+    <div class="ut-actions">
+      <a href="{% url 'export_pdf_utilisateurs' %}" class="ut-btn ut-btn-secondary" target="_blank">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 7H5a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </a>
+      <a href="{% url 'export_excel_utilisateurs' %}" class="ut-btn ut-btn-outline">Export Excel</a>
+      {% if perms.utilisateurs.add_utilisateur %}
+      <a href="{% url 'ajouter_utilisateur' %}" class="ut-btn ut-btn-primary">
+        Ajouter un utilisateur
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 4v16m8-8H4"/></svg>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <form class="ut-filters" method="GET" action="{% url 'liste_utilisateurs' %}">
+    <input class="ut-input" type="search" name="q" placeholder="Filtrer par nom, email ou identifiant" value="{{ query }}" />
+    <select class="ut-select" name="statut" onchange="this.form.submit()">
+      <option value="TOUS" {% if status_filter == 'TOUS' %}selected{% endif %}>Tous les statuts</option>
+      <option value="ACTIF" {% if status_filter == 'ACTIF' %}selected{% endif %}>Actif</option>
+      <option value="INACTIF" {% if status_filter == 'INACTIF' %}selected{% endif %}>Inactif</option>
+    </select>
+    <button type="submit" class="ut-btn-filter">Filtrer</button>
+  </form>
+
+  <div class="ut-table-wrap">
+    {% if page_obj %}
+    <table class="ut-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Utilisateur</th>
+          <th>Email</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+          <th>Créé le</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td style="font-weight:900;color:var(--primary)">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+          <td>
+            <p class="ut-name">{{ item.get_full_name|default:item.username }}</p>
+            <p class="ut-sub">{{ item.username }}</p>
+          </td>
+          <td class="ut-sub">{{ item.email }}</td>
+          <td>
+            {% user_role item as role_name %}<span class="ut-role-badge ut-role-grp">{{ role_name }}</span>
+          </td>
+          <td><span class="ut-badge ut-badge-{{ item.statut|lower }}">{{ item.statut }}</span></td>
+          <td style="white-space:nowrap">{{ item.date_joined|date:'d/m/Y H:i' }}</td>
+          <td>
+            <div class="ut-action-group">
+              <a href="{% url 'detail_utilisateur' item.pk %}" class="ut-action-btn" title="Détail">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              {% if perms.utilisateurs.change_utilisateur %}<a href="{% url 'modifier_utilisateur' item.pk %}" class="ut-action-btn ut-action-btn-edit" title="Modifier">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>{% endif %}
+              <form method="post" action="{% url 'supprimer_utilisateur' item.pk %}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer &quot;{{ item.get_full_name|default:item.username }}&quot; ?')" style="display:inline">
+                {% csrf_token %}
+                {% if perms.utilisateurs.delete_utilisateur and not item.is_superuser %}<button type="submit" class="ut-action-btn ut-action-btn-delete" title="Supprimer">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+                </button>{% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="ut-pagination">
+      <span class="ut-pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ page_obj.paginator.count }} utilisateur(s)</span>
+      <div class="ut-pagination-steps">
+        {% if page_obj.has_previous %}
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if status_filter != 'TOUS' %}statut={{ status_filter }}&{% endif %}page=1" class="ut-page-btn">&laquo;</a>
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if status_filter != 'TOUS' %}statut={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}" class="ut-page-btn">&lsaquo;</a>
+        {% endif %}
+        {% for num in page_links %}
+          {% if num == page_obj.paginator.ELLIPSIS %}
+            <span class="ut-page-btn" style="border:none;cursor:default">&hellip;</span>
+          {% elif num == page_obj.number %}
+            <span class="ut-page-btn active">{{ num }}</span>
+          {% else %}
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if status_filter != 'TOUS' %}statut={{ status_filter }}&{% endif %}page={{ num }}" class="ut-page-btn">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if status_filter != 'TOUS' %}statut={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}" class="ut-page-btn">&rsaquo;</a>
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if status_filter != 'TOUS' %}statut={{ status_filter }}&{% endif %}page={{ page_obj.paginator.num_pages }}" class="ut-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="ut-empty">Aucun utilisateur trouvé.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Visites - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.vv>*+*{margin-top:1.5rem}
+.vv-header{display:flex;flex-direction:column;gap:1.25rem}
+@media(min-width:1024px){.vv-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.vv-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.vv-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.vv-btn svg{width:1rem;height:1rem}
+.vv-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.vv-btn-primary:hover{background:var(--primary-hover)}
+.vv-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.vv-btn-secondary:hover{background:var(--secondary-light)}
+.vv-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.vv-btn-outline:hover{background:var(--primary-light)}
+.vv-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+@media(min-width:1024px){.vv-filters{grid-template-columns:1fr 160px 190px 190px 180px 160px 160px auto}}
+.vv-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.vv-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vv-input::placeholder{color:#94a3b8;font-weight:500}
+.vv-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.vv-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vv-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.vv-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.vv-table thead{background:var(--primary-light)}
+.vv-table thead th{text-align:left;padding:1rem 1.25rem;font-weight:900;color:var(--primary);white-space:nowrap}
+.vv-table thead th:last-child{text-align:right}
+.vv-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.vv-table tbody tr:hover{background:#f8fafc}
+.vv-table tbody tr:last-child{border-bottom:none}
+.vv-table tbody td{padding:1rem 1.25rem;color:#475569;vertical-align:middle}
+.vv-nom{font-weight:900;color:#0f172a;white-space:nowrap}
+.vv-badge{display:inline-flex;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.vv-badge-en_cours{background:#dbeafe;color:#1d4ed8}
+.vv-badge-termine{background:#dcfce7;color:#15803d}
+.vv-badge-excede{background:#fee2e2;color:#dc2626}
+.vv-action-group{display:flex;justify-content:flex-end;gap:.375rem}
+.vv-action-btn{display:inline-flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:.5rem;border:1px solid #e2e8f0;color:#64748b;background:#fff;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-decoration:none}
+.vv-action-btn:hover{background:#f1f5f9}
+.vv-action-btn-edit{border-color:rgba(18,112,184,.2);color:var(--primary)}
+.vv-action-btn-edit:hover{background:var(--primary-light)}
+.vv-action-btn-delete{border-color:rgba(229,27,53,.2);color:var(--secondary)}
+.vv-action-btn-delete:hover{background:var(--secondary-light)}
+.vv-action-btn svg{width:1rem;height:1rem}
+.vv-empty{text-align:center;padding:3rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8}
+.vv-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.vv-pagination-info{font-size:.8125rem;font-weight:600;color:#64748b}
+.vv-pagination-steps{display:flex;align-items:center;gap:.25rem}
+.vv-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.vv-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.vv-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.vv-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+.vv-overlay.open{display:flex}
+.vv-modal{background:#fff;border-radius:1rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);padding:1.5rem}
+.vv-modal h2{font-size:1.25rem;font-weight:900;color:#0f172a;margin:0 0 .25rem}
+.vv-modal p{font-size:.875rem;color:#64748b;margin:0 0 1.25rem}
+.vv-modal label{display:block;font-size:.8125rem;font-weight:900;color:#0f172a;margin-bottom:.375rem}
+.vv-modal select,.vv-modal textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s;font-family:inherit}
+.vv-modal select:focus,.vv-modal textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vv-modal textarea{min-height:80px;resize:vertical}
+.vv-signature-wrap{border:2px dashed #e2e8f0;border-radius:.75rem;overflow:hidden;position:relative;background:#fafafa}
+.vv-signature-wrap canvas{display:block;width:100%;height:120px;cursor:crosshair;touch-action:none}
+.vv-signature-clear{position:absolute;top:.5rem;right:.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:.25rem .625rem;font-size:.6875rem;font-weight:700;color:#64748b;cursor:pointer}
+.vv-signature-clear:hover{background:#f1f5f9}
+.vv-modal-actions{display:flex;gap:.75rem;margin-top:1.5rem}
+.vv-modal-actions button{flex:1;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;transition:background .15s}
+.vv-modal-cancel{background:#f1f5f9;color:#475569}
+.vv-modal-cancel:hover{background:#e2e8f0}
+.vv-modal-confirm{background:var(--primary);color:#fff}
+.vv-modal-confirm:hover{background:var(--primary-hover)}
+.vv-btn-filter{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;background:var(--primary);color:#fff;transition:background .15s,box-shadow .15s;white-space:nowrap}.vv-btn-filter:hover{background:var(--primary-hover);box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vv">
+  <div class="vv-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Visites</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Visites</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Gestion des visites effectuées.</p>
+    </div>
+    <div class="vv-actions">
+      <a href="{% url 'export_pdf_visites' %}" class="vv-btn vv-btn-secondary" target="_blank">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 7H5a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </a>
+      <a href="{% url 'export_excel_visites' %}" class="vv-btn vv-btn-outline">Export Excel</a>
+      {% if perms.visites.add_visite %}
+      <a href="{% url 'ajouter_visite' %}" class="vv-btn vv-btn-primary">
+        Ajouter une visite
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 4v16m8-8H4"/></svg>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <form class="vv-filters" method="GET" action="{% url 'liste_visites' %}">
+    <input class="vv-input" type="search" name="q" placeholder="Filtrer par visiteur, employe, motif..." value="{{ query }}" />
+    <select class="vv-select" name="genre" onchange="this.form.submit()">
+      <option value="">Tous les genres</option>
+      <option value="Homme" {% if genre_filter == 'Homme' %}selected{% endif %}>Homme</option>
+      <option value="Femme" {% if genre_filter == 'Femme' %}selected{% endif %}>Femme</option>
+    </select>
+    <select class="vv-select" name="departement" onchange="this.form.submit()">
+      <option value="">Tous les departements</option>
+      {% for d in departements %}
+      <option value="{{ d.id }}" {% if departement_filter|stringformat:'s' == d.id|stringformat:'s' %}selected{% endif %}>{{ d.nom }}</option>
+      {% endfor %}
+    </select>
+    <select class="vv-select" name="type_visite" onchange="this.form.submit()">
+      <option value="">Tous les types</option>
+      {% for t in types_visite %}
+      <option value="{{ t.id }}" {% if type_visite_filter|stringformat:'s' == t.id|stringformat:'s' %}selected{% endif %}>{{ t.nom }}</option>
+      {% endfor %}
+    </select>
+    <input class="vv-input" type="datetime-local" name="date_start" value="{{ date_start_filter }}" placeholder="Du" />
+    <input class="vv-input" type="datetime-local" name="date_end" value="{{ date_end_filter }}" placeholder="Au" />
+    <select class="vv-select" name="statut" onchange="this.form.submit()">
+      <option value="">Tous les statuts</option>
+      <option value="EN_COURS" {% if statut_filter == 'EN_COURS' %}selected{% endif %}>En cours</option>
+      <option value="TERMINE" {% if statut_filter == 'TERMINE' %}selected{% endif %}>Termine</option>
+      <option value="EXCEDE" {% if statut_filter == 'EXCEDE' %}selected{% endif %}>Excedee</option>
+    </select>
+    <button type="submit" class="vv-btn-filter">Filtrer</button>
+  </form>
+
+  <div class="vv-table-wrap">
+    {% if page_obj %}
+    <table class="vv-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Visiteur</th>
+          <th>Personnel</th>
+          <th>Departement</th>
+          <th>Type</th>
+          <th>Horaires</th>
+          <th>Statut</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td style="font-weight:900;color:var(--primary)">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div style="display:flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:9999px;background:var(--primary-light);font-size:.6875rem;font-weight:900;color:var(--primary);flex-shrink:0">{{ item.visiteur.prenom|first|upper }}{{ item.visiteur.nom|first|upper }}</div>
+              <div>
+                <div class="vv-nom">{{ item.visiteur.nom }} {{ item.visiteur.prenom }}</div>
+                <div style="margin-top:.125rem;font-size:.6875rem;font-weight:600;color:#64748b">{{ item.visiteur.piece_identite|default:'' }}{% if item.visiteur.piece_identite and item.visiteur.numero_piece %} - {% endif %}{{ item.visiteur.numero_piece|default:'' }}{% if item.visiteur.piece_identite or item.visiteur.numero_piece %} - {% endif %}{{ item.visiteur.genre|default:'' }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="color:#475569;white-space:nowrap">{% if item.personnel %}{{ item.personnel.prenom }} {{ item.personnel.nom }}{% else %}-{% endif %}</td>
+          <td style="color:#475569;white-space:nowrap">{% if item.personnel.departement %}{{ item.personnel.departement.nom }}{% else %}-{% endif %}</td>
+          <td style="color:#475569;white-space:nowrap">{{ item.type_visite.nom }}</td>
+          <td style="color:#475569;min-width:14rem">
+            <div><span style="font-weight:900;color:#64748b">Arrivée :</span> {{ item.date_visite|date:'d/m/Y' }} {{ item.heure_arrivee|time:'H:i'|default:'' }}</div>
+            <div><span style="font-weight:900;color:#64748b">Départ prévu :</span> {{ item.date_depart_prevue|date:'d/m/Y' }} {{ item.heure_depart_prevue|time:'H:i'|default:'' }}</div>
+            <div><span style="font-weight:900;color:#64748b">Sortie :</span> {% if item.date_depart %}{{ item.date_depart|date:'d/m/Y' }} {{ item.heure_depart|time:'H:i'|default:'' }}{% else %}-{% endif %}</div>
+          </td>
+          <td><span class="vv-badge vv-badge-{{ item.statut|lower }}">{{ item.get_statut_display|default:item.statut }}</span></td>
+          <td>
+            <div class="vv-action-group">
+              <a href="{% url 'detail_visite' item.pk %}" class="vv-action-btn" title="Détail">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              {% if item.statut != 'TERMINE' and item.statut != 'TERMINE_SYSTEME' %}
+              {% if perms.visites.change_visite %}<a href="{% url 'modifier_visite' item.pk %}" class="vv-action-btn vv-action-btn-edit" title="Modifier">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>{% endif %}
+              {% endif %}
+              {% if item.statut == 'EN_COURS' or item.statut == 'EXCEDE' %}
+              <button type="button" class="vv-action-btn vv-action-btn-edit" style="color:#15803d;border-color:rgba(21,128,61,.2)" title="Terminer" onclick="openTerminerModal('{{ item.pk }}','{{ item.visiteur.nom|escapejs }} {{ item.visiteur.prenom|escapejs }}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              </button>
+              {% endif %}
+              <form method="post" action="{% url 'supprimer_visite' item.pk %}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer la visite de &quot;{{ item.visiteur.nom|escapejs }} {{ item.visiteur.prenom|escapejs }}&quot; ?')" style="display:inline">
+                {% csrf_token %}
+                {% if perms.visites.delete_visite %}<button type="submit" class="vv-action-btn vv-action-btn-delete" title="Supprimer">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+                </button>{% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="vv-pagination">
+      <span class="vv-pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ page_obj.paginator.count }} visite(s)</span>
+      <div class="vv-pagination-steps">
+        {% if page_obj.has_previous %}
+          <a href="?{{ filter_params }}page=1" class="vv-page-btn">&laquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.previous_page_number }}" class="vv-page-btn">&lsaquo;</a>
+        {% endif %}
+        {% for num in page_links %}
+          {% if num == page_obj.paginator.ELLIPSIS %}
+            <span class="vv-page-btn" style="border:none;cursor:default">&hellip;</span>
+          {% elif num == page_obj.number %}
+            <span class="vv-page-btn active">{{ num }}</span>
+          {% else %}
+            <a href="?{{ filter_params }}page={{ num }}" class="vv-page-btn">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{{ filter_params }}page={{ page_obj.next_page_number }}" class="vv-page-btn">&rsaquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.paginator.num_pages }}" class="vv-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="vv-empty">Aucune visite trouvée.</div>
+    {% endif %}
+  </div>
+</div>
+</div>
+
+{% include "visites/partials/terminer_modal.html" %}
+{% endblock %}

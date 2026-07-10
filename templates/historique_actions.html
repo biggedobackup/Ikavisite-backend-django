@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Historique d'actions - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.hst>*+*{margin-top:1.5rem}
+.hst-header{display:flex;flex-direction:column;gap:1.25rem}
+@media(min-width:1024px){.hst-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.hst-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+@media(min-width:1024px){.hst-filters{grid-template-columns:minmax(160px,1fr) 135px 135px 135px 135px auto auto}}
+.hst-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.hst-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.hst-input::placeholder{color:#94a3b8;font-weight:500}
+.hst-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.hst-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.hst-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.hst-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.hst-table thead{background:var(--primary-light)}
+.hst-table thead th{text-align:left;padding:1rem 1.25rem;font-weight:900;color:var(--primary);white-space:nowrap;font-size:.75rem}
+.hst-table thead th:last-child{text-align:right}
+.hst-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.hst-table tbody tr:hover{background:#f8fafc}
+.hst-table tbody tr:last-child{border-bottom:none}
+.hst-table tbody td{padding:.75rem 1.25rem;color:#475569;vertical-align:middle}
+.hst-user{font-weight:900;color:#0f172a;white-space:nowrap}
+.hst-sub{font-size:.75rem;color:#64748b}
+.hst-action-badge{display:inline-flex;border-radius:.5rem;padding:.25rem .625rem;font-size:.6875rem;font-weight:700;color:#475569;background:#f1f5f9}
+.hst-detail{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;font-size:.8125rem}
+.hst-empty{text-align:center;padding:3rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8}
+.hst-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.hst-pagination-info{font-size:.8125rem;font-weight:600;color:#64748b}
+.hst-pagination-steps{display:flex;align-items:center;gap:.25rem}
+.hst-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.hst-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.hst-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.hst-reset-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1rem;font-size:.8125rem;font-weight:900;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;text-decoration:none;transition:border-color .15s,color .15s}
+.hst-reset-btn:hover{border-color:rgba(18,112,184,.3);color:var(--primary)}
+.hst-btn-filter{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;background:var(--primary);color:#fff;transition:background .15s,box-shadow .15s;white-space:nowrap}.hst-btn-filter:hover{background:var(--primary-hover);box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hst">
+  <div class="hst-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Audit &amp; Traçabilité</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Historique d'actions</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Trace de toutes les actions effectuées dans le système.</p>
+    </div>
+  </div>
+
+  <form class="hst-filters" method="GET" action="{% url 'liste_historique_actions' %}">
+    <input class="hst-input" type="search" name="q" placeholder="Filtrer par action, entité, utilisateur, IP..." value="{{ query }}" />
+    <select class="hst-select" name="action">
+      <option value="" {% if not action_filter %}selected{% endif %}>Toutes les actions</option>
+      {% for a in actions_list %}
+      <option value="{{ a }}" {% if action_filter == a %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+    <select class="hst-select" name="entite">
+      <option value="" {% if not entite_filter %}selected{% endif %}>Toutes les entités</option>
+      {% for e in entites_list %}
+      <option value="{{ e }}" {% if entite_filter == e %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+    <input class="hst-input" type="date" name="start" value="{{ start_date }}" placeholder="Date début" />
+    <input class="hst-input" type="date" name="end" value="{{ end_date }}" placeholder="Date fin" />
+    <button type="submit" class="hst-btn-filter">Filtrer</button>
+  </form>
+
+  <div class="hst-table-wrap">
+    {% if page_obj %}
+    <table class="hst-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Utilisateur</th>
+          <th>Action</th>
+          <th>Entité</th>
+          <th>Détails</th>
+          <th>Adresse IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td style="font-weight:600;color:#0f172a;white-space:nowrap">{{ item.created_at|date:'d/m/Y H:i:s' }}</td>
+          <td><span class="hst-user">{{ item.utilisateur.get_full_name|default:item.utilisateur.username|default:'Anonyme' }}</span></td>
+          <td><span class="hst-action-badge">{{ item.action }}</span></td>
+          <td class="hst-sub">{{ item.entite }}{% if item.entite_id %} #{{ item.entite_id }}{% endif %}</td>
+          <td><div class="hst-detail" title="{{ item.details|default:'' }}">{{ item.details|default:'-' }}</div></td>
+          <td class="hst-sub">{{ item.ip_address|default:'-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="hst-pagination">
+      <span class="hst-pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ page_obj.paginator.count }} action(s)</span>
+      <div class="hst-pagination-steps">
+        {% if page_obj.has_previous %}
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if action_filter %}action={{ action_filter }}&{% endif %}{% if entite_filter %}entite={{ entite_filter }}&{% endif %}{% if start_date %}start={{ start_date }}&{% endif %}{% if end_date %}end={{ end_date }}&{% endif %}page=1" class="hst-page-btn">&laquo;</a>
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if action_filter %}action={{ action_filter }}&{% endif %}{% if entite_filter %}entite={{ entite_filter }}&{% endif %}{% if start_date %}start={{ start_date }}&{% endif %}{% if end_date %}end={{ end_date }}&{% endif %}page={{ page_obj.previous_page_number }}" class="hst-page-btn">&lsaquo;</a>
+        {% endif %}
+        {% for num in page_links %}
+          {% if num == page_obj.paginator.ELLIPSIS %}
+            <span class="hst-page-btn" style="border:none;cursor:default">&hellip;</span>
+          {% elif num == page_obj.number %}
+            <span class="hst-page-btn active">{{ num }}</span>
+          {% else %}
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if action_filter %}action={{ action_filter }}&{% endif %}{% if entite_filter %}entite={{ entite_filter }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}page={{ num }}" class="hst-page-btn">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if action_filter %}action={{ action_filter }}&{% endif %}{% if entite_filter %}entite={{ entite_filter }}&{% endif %}{% if start_date %}start={{ start_date }}&{% endif %}{% if end_date %}end={{ end_date }}&{% endif %}page={{ page_obj.next_page_number }}" class="hst-page-btn">&rsaquo;</a>
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if action_filter %}action={{ action_filter }}&{% endif %}{% if entite_filter %}entite={{ entite_filter }}&{% endif %}{% if start_date %}start={{ start_date }}&{% endif %}{% if end_date %}end={{ end_date }}&{% endif %}page={{ page_obj.paginator.num_pages }}" class="hst-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="hst-empty">Aucune action trouvée.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

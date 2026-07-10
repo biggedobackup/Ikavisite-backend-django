@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>404 - Page introuvable - IKAVISITE</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f7f9fc;padding:1.5rem}
+.er{text-align:center;max-width:480px}
+.er-code{font-size:8rem;font-weight:900;line-height:1;background:linear-gradient(135deg,#1270b8,#0f5d99);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.er-title{font-size:1.5rem;font-weight:900;color:#0f172a;margin:1rem 0 .5rem}
+.er-desc{font-size:.9375rem;color:#64748b;margin-bottom:2rem;line-height:1.6}
+.er-btn{display:inline-flex;align-items:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:900;color:#fff;background:#1270b8;text-decoration:none;transition:background .15s;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.er-btn:hover{background:#0f5d99}
+.er-btn svg{width:1.125rem;height:1.125rem}
+.er-illu{margin-bottom:1rem}
+.er-illu svg{width:8rem;height:8rem;color:#cbd5e1}
+</style>
+</head>
+<body>
+<div class="er">
+  <div class="er-illu">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+  </div>
+  <div class="er-code">404</div>
+  <h1 class="er-title">Page introuvable</h1>
+  <p class="er-desc">La page que vous cherchez n'existe pas ou a été déplacée.<br>Vérifiez l'URL ou retournez au tableau de bord.</p>
+  <a href="{% url 'tableau_de_bord' %}" class="er-btn">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    Retour au tableau de bord
+  </a>
+</div>
+</body>
+</html>

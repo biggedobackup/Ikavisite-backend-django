@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Visiteurs - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.vtr>*+*{margin-top:1.5rem}
+.vtr-header{display:flex;flex-direction:column;gap:1.25rem}
+@media(min-width:1024px){.vtr-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.vtr-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.vtr-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.vtr-btn svg{width:1rem;height:1rem}
+.vtr-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.vtr-btn-secondary:hover{background:var(--secondary-light)}
+.vtr-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.vtr-btn-outline:hover{background:var(--primary-light)}
+.vtr-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+@media(min-width:1024px){.vtr-filters{grid-template-columns:1fr 160px 180px 130px 160px 160px 160px auto auto}}
+.vtr-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.vtr-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vtr-input::placeholder{color:#94a3b8;font-weight:500}
+.vtr-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.vtr-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vtr-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.vtr-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.vtr-table thead{background:var(--primary-light)}
+.vtr-table thead th{text-align:left;padding:1rem 1.25rem;font-weight:900;color:var(--primary);white-space:nowrap}
+.vtr-table thead th:last-child{text-align:right}
+.vtr-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.vtr-table tbody tr:hover{background:#f8fafc}
+.vtr-table tbody tr:last-child{border-bottom:none}
+.vtr-table tbody td{padding:1rem 1.25rem;color:#475569;vertical-align:middle}
+.vtr-name{font-weight:900;color:#0f172a;white-space:nowrap}
+.vtr-sub{font-size:.75rem;color:#64748b}
+.vtr-badge{display:inline-flex;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.vtr-badge-ACTIF{background:var(--primary-light);color:var(--primary)}
+.vtr-badge-INACTIF{background:var(--secondary-light);color:var(--secondary)}
+.vtr-doc-badge{display:inline-flex;border-radius:.5rem;background:#f1f5f9;padding:.25rem .625rem;font-size:.6875rem;font-weight:700;color:#475569}
+.vtr-visit-count{display:inline-flex;min-width:1.75rem;height:1.75rem;align-items:center;justify-content:center;border-radius:9999px;background:var(--primary-light);padding:0 .5rem;font-size:.75rem;font-weight:900;color:var(--primary)}
+.vtr-action-group{display:flex;justify-content:flex-end;gap:.375rem}
+.vtr-action-btn{display:inline-flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:.5rem;border:1px solid #e2e8f0;color:#64748b;background:#fff;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-decoration:none}
+.vtr-action-btn:hover{background:#f1f5f9}
+.vtr-action-btn svg{width:1rem;height:1rem}
+.vtr-empty{text-align:center;padding:3rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8}
+.vtr-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.vtr-pagination-info{font-size:.8125rem;font-weight:600;color:#64748b}
+.vtr-pagination-steps{display:flex;align-items:center;gap:.25rem}
+.vtr-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.vtr-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.vtr-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.vtr-reset-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1rem;font-size:.8125rem;font-weight:900;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;text-decoration:none;width:100%;transition:border-color .15s,color .15s}
+.vtr-reset-btn:hover{border-color:rgba(18,112,184,.3);color:var(--primary)}
+.vtr-btn-filter{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;background:var(--primary);color:#fff;transition:background .15s,box-shadow .15s;white-space:nowrap}.vtr-btn-filter:hover{background:var(--primary-hover);box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vtr">
+  <div class="vtr-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Flux visiteurs</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Visiteurs</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Liste des visiteurs enregistres dans le systeme.</p>
+    </div>
+  </div>
+
+  <form class="vtr-filters" method="GET" action="{% url 'liste_visiteurs' %}">
+    <input class="vtr-input" type="search" name="q" placeholder="Filtrer par nom, prenom, nationalite, document..." value="{{ query }}" />
+    <select class="vtr-select" name="genre" onchange="this.form.submit()">
+      <option value="" {% if not genre_filter %}selected{% endif %}>Tous les genres</option>
+      <option value="Homme" {% if genre_filter == 'Homme' %}selected{% endif %}>Homme</option>
+      <option value="Femme" {% if genre_filter == 'Femme' %}selected{% endif %}>Femme</option>
+    </select>
+    <select class="vtr-select" name="nationalite" onchange="this.form.submit()">
+      <option value="" {% if not nationalite_filter %}selected{% endif %}>Toutes nationalites</option>
+      {% for n in nationalites %}
+      <option value="{{ n }}" {% if nationalite_filter == n %}selected{% endif %}>{{ n }}</option>
+      {% endfor %}
+    </select>
+    <select class="vtr-select" name="statut" onchange="this.form.submit()">
+      <option value="" {% if not statut_filter %}selected{% endif %}>Tous les statuts</option>
+      <option value="ACTIF" {% if statut_filter == 'ACTIF' %}selected{% endif %}>Actif</option>
+      <option value="INACTIF" {% if statut_filter == 'INACTIF' %}selected{% endif %}>Inactif</option>
+    </select>
+    <select class="vtr-select" name="piece_identite" onchange="this.form.submit()">
+      <option value="" {% if not piece_identite_filter %}selected{% endif %}>Tous les documents</option>
+      <option value="CNI" {% if piece_identite_filter == 'CNI' %}selected{% endif %}>CNI</option>
+      <option value="PASSEPORT" {% if piece_identite_filter == 'PASSEPORT' %}selected{% endif %}>Passeport</option>
+      <option value="PERMIS_CONDUIRE" {% if piece_identite_filter == 'PERMIS_CONDUIRE' %}selected{% endif %}>Permis conduire</option>
+      <option value="ATTESTATION" {% if piece_identite_filter == 'ATTESTATION' %}selected{% endif %}>Attestation</option>
+    </select>
+    <input class="vtr-input" type="date" name="date_start" value="{{ date_start_filter }}" placeholder="Du" />
+    <input class="vtr-input" type="date" name="date_end" value="{{ date_end_filter }}" placeholder="Au" />
+    <div style="display:flex;gap:.5rem">
+      <button type="submit" class="vtr-btn-filter">Filtrer</button>
+      <a href="{% url 'liste_visiteurs' %}" class="vtr-reset-btn" style="width:auto;padding:.75rem 1rem">Reinitialiser</a>
+    </div>
+  </form>
+
+  <div class="vtr-table-wrap">
+    {% if page_obj %}
+    <table class="vtr-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th style="text-align:center">Nb visites</th>
+          <th>Visiteur</th>
+          <th>Contact</th>
+          <th>Nationalite</th>
+          <th>Document</th>
+          <th>Statut</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in page_obj %}
+        <tr>
+          <td style="font-weight:900;color:var(--primary)">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+          <td style="text-align:center"><span class="vtr-visit-count">{{ v.nb_visites_annotated }}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div style="display:flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:9999px;background:var(--primary-light);font-size:.6875rem;font-weight:900;color:var(--primary);flex-shrink:0">{{ v.prenom|first|upper }}{{ v.nom|first|upper }}</div>
+              <div>
+                <p class="vtr-name">{{ v.prenom }} {{ v.nom }}</p>
+                <p class="vtr-sub">{{ v.profession|default:'' }}</p>
+              </div>
+            </div>
+          </td>
+          <td class="vtr-sub">{{ v.telephone|default:'-' }}</td>
+          <td class="vtr-sub">{{ v.nationalite|default:'-' }}</td>
+          <td>
+            <span class="vtr-doc-badge">{{ v.piece_identite|default:'-' }}</span>
+            {% if v.numero_piece %}<p class="vtr-sub" style="margin-top:.25rem">{{ v.numero_piece }}</p>{% endif %}
+          </td>
+          <td><span class="vtr-badge vtr-badge-{{ v.statut }}">{{ v.statut }}</span></td>
+          <td>
+            <div class="vtr-action-group">
+              <a href="{% url 'detail_visiteur' v.pk %}" class="vtr-action-btn" title="Détail">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"/></svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="vtr-pagination">
+      <span class="vtr-pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ page_obj.paginator.count }} visiteur(s)</span>
+      <div class="vtr-pagination-steps">
+        {% if page_obj.has_previous %}
+          <a href="?{{ filter_params }}page=1" class="vtr-page-btn">&laquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.previous_page_number }}" class="vtr-page-btn">&lsaquo;</a>
+        {% endif %}
+        {% for num in page_links %}
+          {% if num == page_obj.paginator.ELLIPSIS %}
+            <span class="vtr-page-btn" style="border:none;cursor:default">&hellip;</span>
+          {% elif num == page_obj.number %}
+            <span class="vtr-page-btn active">{{ num }}</span>
+          {% else %}
+            <a href="?{{ filter_params }}page={{ num }}" class="vtr-page-btn">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{{ filter_params }}page={{ page_obj.next_page_number }}" class="vtr-page-btn">&rsaquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.paginator.num_pages }}" class="vtr-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="vtr-empty">Aucun visiteur trouvé.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

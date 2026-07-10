@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Détection Objets oubliés - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.do{min-height:100%;background:#f7f9fc}
+.do-wrap{max-width:1500px;margin:0 auto}
+.do-header{display:flex;flex-direction:column;gap:1.5rem;margin-bottom:1.75rem}
+@media(min-width:1280px){.do-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.do-header-left p:first-child{font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.14em}
+.do-header-left h1{margin-top:.5rem;font-size:1.875rem;font-weight:900;color:#0f172a}
+@media(min-width:640px){.do-header-left h1{font-size:2.25rem}}
+.do-header-left p:last-child{margin-top:.5rem;font-size:.875rem;font-weight:500;color:#64748b}
+.do-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.do-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.do-btn svg{width:1rem;height:1rem}
+.do-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.do-btn-secondary:hover{background:var(--secondary-light)}
+.do-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.do-btn-outline:hover{background:var(--primary-light)}
+.do-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.do-btn-primary:hover{background:var(--primary-hover)}
+.do-grid{display:grid;gap:1rem}
+@media(min-width:640px){.do-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.do-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1280px){.do-grid{grid-template-columns:repeat(4,1fr)}}
+.do-card{border-radius:1.25rem;border:1px solid #f1f5f9;background:#fff;overflow:hidden;transition:box-shadow .2s;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.do-card:hover{box-shadow:0 4px 12px rgba(15,23,42,.08)}
+.do-card-body{padding:1rem}
+.do-card-top{display:flex;align-items:center;gap:.625rem;margin-bottom:.75rem}
+.do-avatar{width:2.5rem;height:2.5rem;border-radius:.75rem;overflow:hidden;flex-shrink:0;background:var(--primary-light);display:flex;align-items:center;justify-content:center}
+.do-avatar img{width:100%;height:100%;object-fit:cover}
+.do-avatar-placeholder{font-size:.8125rem;font-weight:900;color:var(--primary)}
+.do-card-info{min-width:0}
+.do-card-objet{font-size:.875rem;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.do-card-visiteur{font-size:.6875rem;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.do-card-meta{display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem}
+.do-badge{display:inline-flex;border-radius:.375rem;padding:.125rem .5rem;font-size:.625rem;font-weight:900}
+.do-badge-NON_RESTITUÉ{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.do-badge-RESTITUÉ{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.do-badge-DÉTRUIT{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.do-date{font-size:.6875rem;font-weight:600;color:#64748b}
+.do-categorie{font-size:.6875rem;font-weight:600;color:#64748b}
+.do-card-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f1f5f9;padding:.75rem 1rem}
+.do-footer-date{font-size:.625rem;font-weight:600;color:#94a3b8}
+.do-footer-actions{display:flex;align-items:center;gap:.375rem}
+.do-btn-restituer{font-size:.625rem;font-weight:900;color:#15803d;background:transparent;border:1px solid #a7f3d0;border-radius:.375rem;padding:.25rem .625rem;cursor:pointer;transition:background .15s}
+.do-btn-restituer:hover{background:#d1fae5}
+.do-btn-detail{font-size:.625rem;font-weight:900;color:var(--primary);text-decoration:none;white-space:nowrap}
+.do-btn-detail:hover{text-decoration:underline}
+.do-empty{text-align:center;padding:3rem 1rem;border-radius:1rem;border:1px solid #f1f5f9;background:#fff}
+.do-empty p{font-size:.875rem;font-weight:600;color:#6b7280}
+.do-pagination{display:flex;justify-content:center;margin-top:1.5rem}
+.do-pagination-inner{display:flex;align-items:center;gap:.5rem;border-radius:.75rem;border:1px solid #f1f5f9;background:#fff;padding:.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.do-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.do-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.do-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.do-page-info{font-size:.8125rem;font-weight:600;color:#64748b;padding:0 .5rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="do">
+  <div class="do-wrap">
+    <div class="do-header">
+      <div class="do-header-left">
+        <p>Objets oubliés</p>
+        <h1>Détection Objets oubliés</h1>
+        <p>Détection automatique des objets oubliés lors de l'enregistrement des visiteurs.</p>
+      </div>
+      <div class="do-actions">
+        <a href="{% url 'export_pdf_objets_oublies' %}" class="do-btn do-btn-secondary" target="_blank">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 7H5a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2z"/></svg>
+          Export PDF
+        </a>
+        <a href="{% url 'export_excel_objets_oublies' %}" class="do-btn do-btn-outline">Export Excel</a>
+        <a href="{% url 'liste_objets_oublies' %}" class="do-btn do-btn-primary">Liste des objets</a>
+      </div>
+    </div>
+
+    {% if page_obj.object_list %}
+    <div class="do-grid">
+      {% for item in page_obj %}
+      <article class="do-card">
+        <div class="do-card-body">
+          <div class="do-card-top">
+            {% if item.visite and item.visite.visiteur and item.visite.visiteur.photo %}
+            <div class="do-avatar"><img src="{{ item.visite.visiteur.photo.url }}" alt="" /></div>
+            {% else %}
+            <div class="do-avatar">
+              <span class="do-avatar-placeholder">
+                {% with v=item.visite.visiteur %}
+                {% if v %}{{ v.prenom|first|upper }}{{ v.nom|first|upper }}{% else %}--{% endif %}
+                {% endwith %}
+              </span>
+            </div>
+            {% endif %}
+            <div class="do-card-info">
+              <h3 class="do-card-objet">{{ item.nom_objet }}</h3>
+              <p class="do-card-visiteur">{% if item.visite and item.visite.visiteur %}{{ item.visite.visiteur.prenom }} {{ item.visite.visiteur.nom }}{% else %}-{% endif %}</p>
+            </div>
+          </div>
+          <div class="do-card-meta">
+            <span class="do-badge do-badge-{{ item.statut }}">{{ item.statut }}</span>
+            <span class="do-categorie">{{ item.categorie|default:'-' }}</span>
+            <span class="do-date">{{ item.date_trouve|date:'d/m/Y'|default:'-' }}</span>
+          </div>
+          <p class="do-card-visiteur" style="font-size:.75rem;color:#475569">{{ item.lieu_trouve|default:'' }}</p>
+        </div>
+        <div class="do-card-footer">
+          <span class="do-footer-date">{{ item.created_at|date:'d/m/Y' }}</span>
+          <div class="do-footer-actions">
+            {% if item.statut != 'RESTITUÉ' and item.statut != 'DÉTRUIT' %}
+            <form method="post" action="{% url 'restituer_objet_oublie' item.pk %}" style="display:inline" onsubmit="return confirm('Marquer cet objet comme restitué ?')">
+              {% csrf_token %}
+              <button type="submit" class="do-btn-restituer">Restituer</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'detail_objet_oublie' item.pk %}" class="do-btn-detail">Détail →</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.paginator.count > 10 %}
+    <div class="do-pagination">
+      <div class="do-pagination-inner">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="do-page-btn">&laquo;</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="do-page-btn">&lsaquo;</a>
+        {% endif %}
+        <span class="do-page-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} / {{ page_obj.paginator.count }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="do-page-btn">&rsaquo;</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="do-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="do-empty">
+      <p>Aucune détection d'objet oublié pour le moment.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

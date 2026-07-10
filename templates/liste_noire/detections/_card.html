@@ -1,0 +1,33 @@
+<article class="ld-ln-card {{ bc }}">
+  <div class="ld-ln-card-body">
+    <div class="ld-ln-card-top">
+      <div class="ld-ln-card-visiteur">
+        <div class="ld-ln-avatar">{{ item.liste_noire.prenom|first|upper }}{{ item.liste_noire.nom|first|upper }}</div>
+        <div class="ld-ln-visiteur-info">
+          <h3 class="ld-ln-visiteur-name">{{ item.liste_noire.prenom }} {{ item.liste_noire.nom }}</h3>
+          <p class="ld-ln-visiteur-sub">{{ item.porte_entree.titre|default:'-' }}</p>
+        </div>
+      </div>
+      <span class="ld-ln-score {{ scb }}">{{ sc }}%</span>
+    </div>
+    <div class="ld-ln-detail">
+      <div class="ld-ln-detail-row">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        <span>{{ item.liste_noire.type_liste_noire.nom|default:'-' }}</span>
+      </div>
+      <div class="ld-ln-detail-row">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>{{ item.date_detection|date:'d/m/Y H:i'|default:'-' }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="ld-ln-card-footer">
+    <div>
+      {% if item.statut == 'TRAITE' %}<span class="ld-ln-footer-badge ld-ln-footer-badge-traite">Traité</span>{% else %}<span class="ld-ln-footer-badge ld-ln-footer-badge-attente">En attente</span>{% endif %}
+    </div>
+    <div class="ld-ln-footer-actions">
+      {% if item.statut != 'TRAITE' %}<form method="post" action="{% url 'traiter_detection_liste_noire' item.pk %}" style="display:inline">{% csrf_token %}<button type="submit" class="ld-ln-btn-traiter"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:.875rem;height:.875rem"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>Traiter</button></form>{% endif %}
+      <a href="{% url 'detail_detection_liste_noire' item.pk %}" class="ld-ln-btn-detail">Détail →</a>
+    </div>
+  </div>
+</article>

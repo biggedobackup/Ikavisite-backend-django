@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ajouter un rôle - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.rola>*+*{margin-top:1.5rem}
+.rola-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04);margin-top:2rem}
+@media(min-width:640px){.rola-card{padding:2rem}}
+.rola-grid{display:grid;gap:1.25rem}
+.rola-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.rola-required{color:var(--secondary)}
+.rola-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.rola-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.rola-input::placeholder{color:#94a3b8;font-weight:500}
+.rola-perms{display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:.5rem;margin-top:.5rem;max-height:25rem;overflow-y:auto;border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem}
+.rola-check{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border-radius:.5rem;cursor:pointer;transition:background .15s}
+.rola-check:hover{background:#f8fafc}
+.rola-check input{width:1.125rem;height:1.125rem;accent-color:var(--primary)}
+.rola-check label{font-size:.8125rem;font-weight:600;color:#0f172a;cursor:pointer}
+.rola-check small{font-size:.6875rem;color:#94a3b8;font-weight:500;margin-left:.25rem}
+.rola-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.rola-actions{flex-direction:row}}
+.rola-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.rola-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.rola-btn-primary:hover{background:var(--primary-hover)}
+.rola-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.rola-btn-ghost:hover{background:#f8fafc}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rola">
+  <div>
+    <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Rôles</p>
+    <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Ajouter un rôle</h1>
+  </div>
+
+  <form class="rola-card" method="post" action="{% url 'ajouter_groupe' %}">
+    {% csrf_token %}
+    <div class="rola-grid">
+      <div>
+        <label class="rola-label">Nom du rôle <span class="rola-required">*</span></label>
+        <input class="rola-input" type="text" name="name" placeholder="Ex: Agent de sécurité" value="{{ request.POST.name|default:'' }}" required />
+      </div>
+      <div>
+        <label class="rola-label">Permissions</label>
+        <div class="rola-perms">
+          {% regroup permissions by app_label as perm_groups %}
+          {% for group in perm_groups %}
+          <div style="grid-column:1/-1;font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;margin-top:.5rem;border-bottom:1px solid #f1f5f9;padding-bottom:.25rem">{{ group.grouper }}</div>
+          {% for perm in group.list %}
+          <label class="rola-check">
+            <input type="checkbox" name="permissions" value="{{ perm.id }}" />
+            <span>{{ perm.name }}</span>
+            <small>{{ perm.codename }}</small>
+          </label>
+          {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="rola-actions">
+      <a href="{% url 'liste_groupes' %}" class="rola-btn rola-btn-ghost">Annuler</a>
+      <button type="submit" class="rola-btn rola-btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Visites terminées - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.vtm>*+*{margin-top:1.5rem}
+.vtm-header{display:flex;flex-direction:column;gap:1.25rem}
+@media(min-width:1024px){.vtm-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.vtm-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.vtm-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.vtm-btn svg{width:1rem;height:1rem}
+.vtm-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.vtm-btn-secondary:hover{background:var(--secondary-light)}
+.vtm-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.vtm-btn-outline:hover{background:var(--primary-light)}
+.vtm-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+@media(min-width:1024px){.vtm-filters{grid-template-columns:1fr 160px 200px 200px auto}}
+.vtm-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.vtm-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vtm-input::placeholder{color:#94a3b8;font-weight:500}
+.vtm-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.vtm-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.vtm-table thead{background:var(--primary-light)}
+.vtm-table thead th{text-align:left;padding:1rem 1.25rem;font-weight:900;color:var(--primary);white-space:nowrap}
+.vtm-table thead th:last-child{text-align:right}
+.vtm-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.vtm-table tbody tr:hover{background:#f8fafc}
+.vtm-table tbody tr:last-child{border-bottom:none}
+.vtm-table tbody td{padding:1rem 1.25rem;color:#475569;vertical-align:middle}
+.vtm-nom{font-weight:900;color:#0f172a;white-space:nowrap}
+.vtm-action-group{display:flex;justify-content:flex-end;gap:.375rem}
+.vtm-action-btn{display:inline-flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:.5rem;border:1px solid #e2e8f0;color:#64748b;background:#fff;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-decoration:none}
+.vtm-action-btn:hover{background:#f1f5f9}
+.vtm-action-btn svg{width:1rem;height:1rem}
+.vtm-empty{text-align:center;padding:3rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8}
+.vtm-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.vtm-pagination-info{font-size:.8125rem;font-weight:600;color:#64748b}
+.vtm-pagination-steps{display:flex;align-items:center;gap:.25rem}
+.vtm-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.vtm-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.vtm-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.vtm-btn-filter{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;background:var(--primary);color:#fff;transition:background .15s,box-shadow .15s;white-space:nowrap}.vtm-btn-filter:hover{background:var(--primary-hover);box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vtm">
+  <div class="vtm-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Visites</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Visites terminées</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Liste des visites terminées.</p>
+    </div>
+    <div class="vtm-actions">
+      <a href="{% url 'export_pdf_visites_terminees' %}" class="vtm-btn vtm-btn-secondary" target="_blank">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 7H5a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </a>
+      <a href="{% url 'export_excel_visites_terminees' %}" class="vtm-btn vtm-btn-outline">Export Excel</a>
+    </div>
+  </div>
+
+  <form class="vtm-filters" method="GET" action="{% url 'liste_visites_terminees' %}">
+    <input class="vtm-input" type="search" name="q" placeholder="Filtrer par visiteur, motif..." value="{{ query }}" />
+    <select class="vtm-input" name="genre" onchange="this.form.submit()">
+      <option value="">Tous les genres</option>
+      <option value="Homme" {% if genre_filter == 'Homme' %}selected{% endif %}>Homme</option>
+      <option value="Femme" {% if genre_filter == 'Femme' %}selected{% endif %}>Femme</option>
+    </select>
+    <select class="vtm-input" name="departement" onchange="this.form.submit()">
+      <option value="">Tous les departements</option>
+      {% for d in departements %}
+      <option value="{{ d.id }}" {% if departement_filter|stringformat:'s' == d.id|stringformat:'s' %}selected{% endif %}>{{ d.nom }}</option>
+      {% endfor %}
+    </select>
+    <select class="vtm-input" name="type_visite" onchange="this.form.submit()">
+      <option value="">Tous les types</option>
+      {% for t in types_visite %}
+      <option value="{{ t.id }}" {% if type_visite_filter|stringformat:'s' == t.id|stringformat:'s' %}selected{% endif %}>{{ t.nom }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="vtm-btn-filter">Filtrer</button>
+  </form>
+
+  <div class="vtm-table-wrap">
+    {% if page_obj %}
+    <table class="vtm-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Visiteur</th>
+          <th>Type</th>
+          <th>Porte</th>
+          <th>Date visite</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td style="font-weight:900;color:var(--primary)">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div style="display:flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:9999px;background:var(--primary-light);font-size:.6875rem;font-weight:900;color:var(--primary);flex-shrink:0">{{ item.visiteur.prenom|first|upper }}{{ item.visiteur.nom|first|upper }}</div>
+              <div class="vtm-nom">{{ item.visiteur.nom }} {{ item.visiteur.prenom }}</div>
+            </div>
+          </td>
+          <td>{{ item.type_visite.nom }}</td>
+          <td>{{ item.porte_entree.titre }}</td>
+          <td style="white-space:nowrap">{{ item.date_visite|date:'d/m/Y' }}</td>
+          <td>
+            <div class="vtm-action-group">
+              <a href="{% url 'detail_visite_terminee' item.pk %}" class="vtm-action-btn" title="Détail">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              <form method="post" action="{% url 'supprimer_visite' item.pk %}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer la visite de &quot;{{ item.visiteur.nom|escapejs }} {{ item.visiteur.prenom|escapejs }}&quot; ?')" style="display:inline">
+                {% csrf_token %}
+                {% if perms.visites.delete_visite %}<button type="submit" class="vtm-action-btn" title="Supprimer">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+                </button>{% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="vtm-pagination">
+      <span class="vtm-pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ page_obj.paginator.count }} visite(s)</span>
+      <div class="vtm-pagination-steps">
+        {% if page_obj.has_previous %}
+          <a href="?{{ filter_params }}page=1" class="vtm-page-btn">&laquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.previous_page_number }}" class="vtm-page-btn">&lsaquo;</a>
+        {% endif %}
+        {% for num in page_links %}
+          {% if num == page_obj.paginator.ELLIPSIS %}
+            <span class="vtm-page-btn" style="border:none;cursor:default">&hellip;</span>
+          {% elif num == page_obj.number %}
+            <span class="vtm-page-btn active">{{ num }}</span>
+          {% else %}
+            <a href="?{{ filter_params }}page={{ num }}" class="vtm-page-btn">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{{ filter_params }}page={{ page_obj.next_page_number }}" class="vtm-page-btn">&rsaquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.paginator.num_pages }}" class="vtm-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="vtm-empty">Aucune visite terminée.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

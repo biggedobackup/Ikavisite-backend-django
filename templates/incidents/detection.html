@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Détection Incident - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.di{min-height:100%;background:#f7f9fc}
+.di-wrap{max-width:1500px;margin:0 auto}
+.di-header{display:flex;flex-direction:column;gap:1.5rem;margin-bottom:1.75rem}
+@media(min-width:1280px){.di-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.di-header-left p:first-child{font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.14em}
+.di-header-left h1{margin-top:.5rem;font-size:1.875rem;font-weight:900;color:#0f172a}
+@media(min-width:640px){.di-header-left h1{font-size:2.25rem}}
+.di-header-left p:last-child{margin-top:.5rem;font-size:.875rem;font-weight:500;color:#64748b}
+.di-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.di-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.di-btn svg{width:1rem;height:1rem}
+.di-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.di-btn-secondary:hover{background:var(--secondary-light)}
+.di-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.di-btn-outline:hover{background:var(--primary-light)}
+.di-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.di-btn-primary:hover{background:var(--primary-hover)}
+.di-grid{display:grid;gap:1rem}
+@media(min-width:640px){.di-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.di-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1280px){.di-grid{grid-template-columns:repeat(4,1fr)}}
+.di-card{border-radius:1.25rem;border:1px solid #f1f5f9;background:#fff;overflow:hidden;transition:box-shadow .2s;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.di-card:hover{box-shadow:0 4px 12px rgba(15,23,42,.08)}
+.di-card-critical{box-shadow:0 0 0 2px #f87171}
+.di-card-body{padding:1rem}
+.di-card-top{display:flex;align-items:center;gap:.625rem;margin-bottom:.75rem}
+.di-avatar{width:2.5rem;height:2.5rem;border-radius:.75rem;overflow:hidden;flex-shrink:0;background:var(--primary-light);display:flex;align-items:center;justify-content:center}
+.di-avatar img{width:100%;height:100%;object-fit:cover}
+.di-avatar-placeholder{font-size:.8125rem;font-weight:900;color:var(--primary)}
+.di-card-info{min-width:0}
+.di-card-type{font-size:.875rem;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.di-card-visiteur{font-size:.6875rem;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.di-card-meta{display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem}
+.di-badge{display:inline-flex;border-radius:.375rem;padding:.125rem .5rem;font-size:.625rem;font-weight:900}
+.di-badge-FAIBLE,.di-badge-Faible{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.di-badge-MOYENNE,.di-badge-Moyen{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.di-badge-ELEVEE,.di-badge-Élevé{background:#ffedd5;color:#c2410c;border:1px solid #fed7aa}
+.di-badge-CRITIQUE,.di-badge-Critique{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.di-date{font-size:.6875rem;font-weight:600;color:#64748b}
+.di-motif{font-size:.75rem;color:#475569;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-clamp:2}
+.di-card-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f1f5f9;padding:.75rem 1rem}
+.di-footer-date{font-size:.625rem;font-weight:600;color:#94a3b8}
+.di-footer-actions{display:flex;align-items:center;gap:.375rem}
+.di-btn-fermer{font-size:.625rem;font-weight:900;color:#dc2626;background:transparent;border:1px solid #fecaca;border-radius:.375rem;padding:.25rem .625rem;cursor:pointer;transition:background .15s}
+.di-btn-fermer:hover{background:#fee2e2}
+.di-btn-detail{font-size:.625rem;font-weight:900;color:var(--primary);text-decoration:none;white-space:nowrap}
+.di-btn-detail:hover{text-decoration:underline}
+.di-empty{text-align:center;padding:3rem 1rem;border-radius:1rem;border:1px solid #f1f5f9;background:#fff}
+.di-empty p{font-size:.875rem;font-weight:600;color:#6b7280}
+.di-skeleton{display:grid;gap:1rem}
+@media(min-width:640px){.di-skeleton{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.di-skeleton{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1280px){.di-skeleton{grid-template-columns:repeat(4,1fr)}}
+.di-skel-card{border-radius:1.25rem;border:1px solid #f1f5f9;background:#fff;padding:1rem;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.di-skel-row{height:.75rem;border-radius:.25rem;background:#f1f5f9;margin-bottom:.5rem}
+.di-skel-row:last-child{margin-bottom:0}
+.di-skel-avatar{width:2.5rem;height:2.5rem;border-radius:.75rem;background:#f1f5f9;flex-shrink:0}
+.di-skel-top{display:flex;gap:.625rem;margin-bottom:.75rem}
+.di-skel-lines{flex:1}
+.di-skel-line{height:.625rem;border-radius:.25rem;background:#f1f5f9;margin-bottom:.375rem}
+.di-skel-line:last-child{width:60%;margin-bottom:0}
+.di-pagination{display:flex;justify-content:center;margin-top:1.5rem}
+.di-pagination-inner{display:flex;align-items:center;gap:.5rem;border-radius:.75rem;border:1px solid #f1f5f9;background:#fff;padding:.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.di-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.di-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.di-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.di-page-info{font-size:.8125rem;font-weight:600;color:#64748b;padding:0 .5rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="di">
+  <div class="di-wrap">
+    <div class="di-header">
+      <div class="di-header-left">
+        <p>Sécurité</p>
+        <h1>Détection Incident</h1>
+        <p>Détection automatique des incidents lors de l'enregistrement des visiteurs.</p>
+      </div>
+      <div class="di-actions">
+        <a href="{% url 'export_pdf_incidents' %}" class="di-btn di-btn-secondary" target="_blank">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 7H5a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2z"/></svg>
+          Export PDF
+        </a>
+        <a href="{% url 'export_excel_incidents' %}" class="di-btn di-btn-outline">Export Excel</a>
+        <a href="{% url 'liste_incidents' %}" class="di-btn di-btn-primary">Liste des incidents</a>
+      </div>
+    </div>
+
+    {% if page_obj.object_list %}
+    <div class="di-grid">
+      {% for item in page_obj %}
+      <article class="di-card{% if item.incident.gravite == 'CRITIQUE' %} di-card-critical{% endif %}">
+        <div class="di-card-body">
+          <div class="di-card-top">
+            {% if item.incident.visite and item.incident.visite.visiteur and item.incident.visite.visiteur.photo %}
+            <div class="di-avatar"><img src="{{ item.incident.visite.visiteur.photo.url }}" alt="" /></div>
+            {% else %}
+            <div class="di-avatar">
+              <span class="di-avatar-placeholder">
+                {% with v=item.incident.visite.visiteur %}
+                {% if v %}{{ v.prenom|first|upper }}{{ v.nom|first|upper }}{% else %}--{% endif %}
+                {% endwith %}
+              </span>
+            </div>
+            {% endif %}
+            <div class="di-card-info">
+              <h3 class="di-card-type">{{ item.incident.type_incident }}</h3>
+              <p class="di-card-visiteur">{% if item.incident.visite and item.incident.visite.visiteur %}{{ item.incident.visite.visiteur.prenom }} {{ item.incident.visite.visiteur.nom }}{% else %}-{% endif %}</p>
+            </div>
+          </div>
+          <div class="di-card-meta">
+            <span class="di-badge di-badge-{{ item.incident.gravite }}">{{ item.incident.gravite }}</span>
+            <span class="di-date">{{ item.incident.date_incident|date:'d/m/Y H:i'|default:'-' }}</span>
+            <span class="di-badge" style="margin-left:.25rem">Confiance: {{ item.confiance }}</span>
+          </div>
+          {% if item.incident.motif %}
+          <p class="di-motif">{{ item.incident.motif }}</p>
+          {% endif %}
+        </div>
+        <div class="di-card-footer">
+          <span class="di-footer-date">Détecté le {{ item.created_at|date:'d/m/Y' }}</span>
+          <div class="di-footer-actions">
+            {% if item.incident.statut != 'FERME' and item.incident.statut != 'RESOLU' %}
+            <form method="post" action="{% url 'fermer_incident' item.incident.pk %}" style="display:inline" onsubmit="return confirm('Fermer cet incident ?')">
+              {% csrf_token %}
+              <button type="submit" class="di-btn-fermer">Fermer</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'detail_incident' item.incident.pk %}" class="di-btn-detail">Détail →</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.paginator.count > 10 %}
+    <div class="di-pagination">
+      <div class="di-pagination-inner">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="di-page-btn">&laquo;</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="di-page-btn">&lsaquo;</a>
+        {% endif %}
+        <span class="di-page-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} / {{ page_obj.paginator.count }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="di-page-btn">&rsaquo;</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="di-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="di-empty">
+      <p>Aucune détection d'incident pour le moment.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

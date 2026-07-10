@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ajouter un type de visite - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.vta>*+*{margin-top:1.5rem}
+.vta-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04);margin-top:2rem}
+@media(min-width:640px){.vta-card{padding:2rem}}
+.vta-grid{display:grid;gap:1.25rem}
+@media(min-width:640px){.vta-grid{grid-template-columns:1fr 1fr}}
+.vta-full{grid-column:1/-1}
+.vta-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.vta-required{color:var(--secondary)}
+.vta-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.vta-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vta-input::placeholder{color:#94a3b8;font-weight:500}
+.vta-textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;resize:vertical;min-height:6rem;transition:border-color .15s,box-shadow .15s}
+.vta-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vta-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.vta-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vta-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.vta-actions{flex-direction:row}}
+.vta-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.vta-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.vta-btn-primary:hover{background:var(--primary-hover)}
+.vta-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.vta-btn-ghost:hover{background:#f8fafc}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vta">
+  <div>
+    <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Types de visite</p>
+    <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Ajouter un type de visite</h1>
+  </div>
+
+  <form class="vta-card" method="post" action="{% url 'ajouter_type_visite' %}">
+    {% csrf_token %}
+    <div class="vta-grid">
+      <div>
+        <label class="vta-label">Nom <span class="vta-required">*</span></label>
+        <input class="vta-input" type="text" name="nom" placeholder="Ex: Visite technique" value="{{ request.POST.nom|default:'' }}" required />
+      </div>
+      <div>
+        <label class="vta-label">Statut</label>
+        <select class="vta-select" name="statut">
+          <option value="ACTIF" selected>ACTIF</option>
+          <option value="INACTIF">INACTIF</option>
+        </select>
+      </div>
+      <div class="vta-full">
+        <label class="vta-label">Description</label>
+        <textarea class="vta-textarea" name="description" rows="4" placeholder="Description du type de visite">{{ request.POST.description|default:'' }}</textarea>
+      </div>
+    </div>
+    <div class="vta-actions">
+      <a href="{% url 'liste_types_visite' %}" class="vta-btn vta-btn-ghost">Annuler</a>
+      <button type="submit" class="vta-btn vta-btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

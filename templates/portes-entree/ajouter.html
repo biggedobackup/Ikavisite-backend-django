@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ajouter une porte - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.pea>*+*{margin-top:1.5rem}
+.pea-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04);margin-top:2rem}
+@media(min-width:640px){.pea-card{padding:2rem}}
+.pea-grid{display:grid;gap:1.25rem}
+@media(min-width:640px){.pea-grid{grid-template-columns:1fr 1fr}}
+.pea-full{grid-column:1/-1}
+.pea-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.pea-required{color:var(--secondary)}
+.pea-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.pea-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.pea-input::placeholder{color:#94a3b8;font-weight:500}
+.pea-textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;resize:vertical;min-height:6rem;transition:border-color .15s,box-shadow .15s}
+.pea-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.pea-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.pea-actions{flex-direction:row}}
+.pea-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.pea-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.pea-btn-primary:hover{background:var(--primary-hover)}
+.pea-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.pea-btn-ghost:hover{background:#f8fafc}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pea">
+  <div>
+    <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Portes d'entrée</p>
+    <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Ajouter une porte</h1>
+  </div>
+
+  <form class="pea-card" method="post" action="{% url 'ajouter_porte_entree' %}">
+    {% csrf_token %}
+    <div class="pea-grid">
+      <div>
+        <label class="pea-label">Nom de la porte <span class="pea-required">*</span></label>
+        <input class="pea-input" type="text" name="titre" placeholder="Accueil principal" value="{{ request.POST.titre|default:'' }}" required />
+      </div>
+      <div>
+        <label class="pea-label">Emplacement physique</label>
+        <input class="pea-input" type="text" name="emplacement" placeholder="Hall RDC" value="{{ request.POST.emplacement|default:'' }}" />
+      </div>
+      <div class="pea-full">
+        <label class="pea-label">Description</label>
+        <textarea class="pea-textarea" name="description" rows="4" placeholder="Description de la porte">{{ request.POST.description|default:'' }}</textarea>
+      </div>
+    </div>
+    <div class="pea-actions">
+      <a href="{% url 'liste_portes_entree' %}" class="pea-btn pea-btn-ghost">Annuler</a>
+      <button type="submit" class="pea-btn pea-btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

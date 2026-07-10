@@ -1,0 +1,265 @@
+{% load static %}
+<aside class="ika-sidebar">
+  <div class="ika-logo-area">
+    <div class="ika-logo-icon"><img src="{% static 'logo.png' %}" alt="IKAVISITE"></div>
+    <div>
+      <h1 class="ika-logo-title">IKAVISITE</h1>
+      <span class="ika-logo-sub">Centre de supervision</span>
+    </div>
+  </div>
+
+  <nav class="ika-nav">
+    <div class="ika-nav-section">
+      <p class="ika-nav-section-title">Navigation principale</p>
+      <a href="{% url 'tableau_de_bord' %}" class="ika-nav-item{% if request.resolver_match.url_name == 'tableau_de_bord' %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span>Tableau de bord</span>
+      </a>
+    </div>
+
+    {% if perms.entreprise.view_entreprise or perms.entreprise.view_porteentree or perms.entreprise.view_departement or perms.entreprise.view_creneausemaine %}
+    <div class="ika-nav-section">
+      <p class="ika-nav-section-title">Configuration</p>
+      {% if perms.entreprise.view_entreprise %}
+      <a href="{% url 'entreprise' %}" class="ika-nav-item{% if request.resolver_match.url_name == 'entreprise' %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4-1.343 4-3-1.79-3-4-3zm0 0V4m0 10v6m8-8h-4M8 12H4"/></svg>
+        <span>Paramètres entreprise</span>
+      </a>
+      {% endif %}
+      {% if perms.entreprise.view_porteentree %}
+      <a href="{% url 'liste_portes_entree' %}" class="ika-nav-item{% if 'portes-entree' in request.path %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+        <span>Points d'entrée</span>
+      </a>
+      {% endif %}
+      {% if perms.entreprise.view_departement %}
+      <a href="{% url 'liste_departements' %}" class="ika-nav-item{% if 'departements' in request.path %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m4-14h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"/></svg>
+        <span>Départements</span>
+      </a>
+      {% endif %}
+      {% if perms.entreprise.view_creneausemaine %}
+      <a href="{% url 'liste_creneaux' %}" class="ika-nav-item{% if 'creneaux-semaine' in request.path %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Créneaux de semaine</span>
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if perms.auth.view_group or perms.utilisateurs.view_utilisateur or perms.entreprise.view_personnel %}
+    <div class="ika-nav-section">
+      <p class="ika-nav-section-title">Sécurité &amp; Personnes</p>
+      {% if perms.auth.view_group %}
+      <a href="{% url 'liste_groupes' %}" class="ika-nav-item{% if 'groupes' in request.path %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <span>Rôles</span>
+      </a>
+      {% endif %}
+      {% if perms.utilisateurs.view_utilisateur %}
+      <a href="{% url 'liste_utilisateurs' %}" class="ika-nav-item{% if 'utilisateurs' in request.path %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/></svg>
+        <span>Utilisateurs</span>
+      </a>
+      {% endif %}
+      {% if perms.entreprise.view_personnel %}
+      <a href="{% url 'liste_personnel' %}" class="ika-nav-item{% if 'personnel' in request.path %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <span>Personnels</span>
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if perms.visites.view_visite or perms.visites.view_visiteur or perms.incidents.view_incident or perms.objets_oublies.view_objetoublie %}
+    <div class="ika-nav-section">
+      <p class="ika-nav-section-title">Visites &amp; Analyses</p>
+
+      {% if perms.visites.view_typevisite or perms.visites.view_visite %}
+      {% with u=request.resolver_match.url_name %}
+        <div>
+          <a href="#" class="ika-nav-item{% if '/visites/' in request.path and '/visiteurs/' not in request.path %} active{% endif %}" data-toggle="sub-visites">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span>Visites</span>
+            <svg class="nav-chevron{% if '/visites/' in request.path and '/visiteurs/' not in request.path %} open{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+          <div id="sub-visites" class="ika-submenu{% if '/visites/' not in request.path or '/visiteurs/' in request.path %} hidden{% endif %}">
+            {% if perms.visites.view_typevisite %}
+            <a href="{% url 'liste_types_visite' %}"{% if u == 'liste_types_visite' or u == 'ajouter_type_visite' or u == 'detail_type_visite' or u == 'modifier_type_visite' %} class="active"{% endif %}>Types de visite</a>
+            {% endif %}
+            {% if perms.visites.view_visite %}
+            <a href="{% url 'liste_visites' %}"{% if u == 'liste_visites' or u == 'ajouter_visite' or u == 'detail_visite' or u == 'modifier_visite' %} class="active"{% endif %}>Liste des visites</a>
+            {% endif %}
+            {% if perms.visites.view_visiteencours %}
+            <a href="{% url 'liste_visites_encours' %}"{% if u == 'liste_visites_encours' or u == 'detail_visite_encours' %} class="active"{% endif %}>Visites en cours</a>
+            {% endif %}
+            {% if perms.visites.view_visiteterminee %}
+            <a href="{% url 'liste_visites_terminees' %}"{% if u == 'liste_visites_terminees' or u == 'detail_visite_terminee' %} class="active"{% endif %}>Visites terminées</a>
+            {% endif %}
+            {% if perms.visites.view_visiteexcedee %}
+            <a href="{% url 'liste_visites_excedees' %}"{% if u == 'liste_visites_excedees' or u == 'detail_visite_excedee' %} class="active"{% endif %}>Visites excédées</a>
+            {% endif %}
+          </div>
+        </div>
+      {% endwith %}
+      {% endif %}
+
+      {% if perms.visites.view_visiteur %}
+      {% with u=request.resolver_match.url_name %}
+      <a href="{% url 'liste_visiteurs' %}" class="ika-nav-item{% if u == 'liste_visiteurs' or u == 'detail_visiteur' %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Visiteurs</span>
+      </a>
+      {% endwith %}
+      {% endif %}
+
+      {% if perms.incidents.view_incident %}
+      {% with u=request.resolver_match.url_name %}
+      <div>
+        <a href="#" class="ika-nav-item{% if '/incidents/' in request.path %} active{% endif %}" data-toggle="sub-incidents">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <span>Incidents</span>
+          <svg class="nav-chevron{% if '/incidents/' in request.path %} open{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </a>
+        <div id="sub-incidents" class="ika-submenu{% if '/incidents/' not in request.path %} hidden{% endif %}">
+          {% if perms.incidents.view_incident %}
+          <a href="{% url 'detection_incidents' %}"{% if u == 'detection_incidents' %} class="active"{% endif %}>Détection</a>
+          <a href="{% url 'liste_incidents' %}"{% if u == 'liste_incidents' or u == 'ajouter_incident' or u == 'detail_incident' or u == 'modifier_incident' %} class="active"{% endif %}>Liste des incidents</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endwith %}
+      {% endif %}
+
+      {% if perms.objets_oublies.view_objetoublie %}
+      {% with u=request.resolver_match.url_name %}
+      <div>
+        <a href="#" class="ika-nav-item{% if '/objets-oublies/' in request.path %} active{% endif %}" data-toggle="sub-objets">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <span>Objets oubliés</span>
+          <svg class="nav-chevron{% if '/objets-oublies/' in request.path %} open{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </a>
+        <div id="sub-objets" class="ika-submenu{% if '/objets-oublies/' not in request.path %} hidden{% endif %}">
+          {% if perms.objets_oublies.view_objetoublie %}
+          <a href="{% url 'detection_objets_oublies' %}"{% if u == 'detection_objets_oublies' %} class="active"{% endif %}>Détection</a>
+          <a href="{% url 'liste_objets_oublies' %}"{% if u == 'liste_objets_oublies' or u == 'ajouter_objet_oublie' or u == 'detail_objet_oublie' or u == 'modifier_objet_oublie' %} class="active"{% endif %}>Liste des objets</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endwith %}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if perms.liste_noire.view_listenoire or perms.liste_noire.view_typelistenoire %}
+    <div class="ika-nav-section">
+      <p class="ika-nav-section-title">Contrôles de sécurité</p>
+      {% with u=request.resolver_match.url_name %}
+      <div>
+        <a href="#" class="ika-nav-item{% if '/liste-noire/' in request.path %} active{% endif %}" data-toggle="sub-liste-noire">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Listes noires</span>
+          <svg class="nav-chevron{% if '/liste-noire/' in request.path %} open{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </a>
+        <div id="sub-liste-noire" class="ika-submenu{% if '/liste-noire/' not in request.path %} hidden{% endif %}">
+          {% if perms.liste_noire.view_typelistenoire %}
+          <a href="{% url 'liste_types_liste_noire' %}"{% if u == 'liste_types_liste_noire' or u == 'ajouter_type_liste_noire' or u == 'detail_type_liste_noire' or u == 'modifier_type_liste_noire' %} class="active"{% endif %}>Types de liste noire</a>
+          {% endif %}
+          {% if perms.liste_noire.view_listenoire %}
+          <a href="{% url 'liste_listes_noires' %}"{% if u == 'liste_listes_noires' or u == 'ajouter_liste_noire' or u == 'detail_liste_noire' or u == 'modifier_liste_noire' %} class="active"{% endif %}>Liste noire</a>
+          <a href="{% url 'liste_detections_liste_noire' %}"{% if u == 'liste_detections_liste_noire' or u == 'detail_detection_liste_noire' %} class="active"{% endif %}>Détections liste noire</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endwith %}
+    </div>
+    {% endif %}
+
+    {% if perms.utilisateurs.view_historiqueaction %}
+    <div class="ika-nav-section">
+      <p class="ika-nav-section-title">Audit &amp; Traçabilité</p>
+      <a href="{% url 'liste_historique_actions' %}" class="ika-nav-item{% if request.resolver_match.url_name == 'liste_historique_actions' %} active{% endif %}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        <span>Historique d'actions</span>
+      </a>
+    </div>
+    {% endif %}
+  </nav>
+</aside>
+
+<div id="mobile-overlay" class="ika-mobile-overlay">
+  <div class="ika-mobile-backdrop"></div>
+  <aside class="ika-mobile-sidebar">
+    <div class="ika-logo-area">
+      <div class="ika-logo-icon"><img src="{% static 'logo.png' %}" alt="IKAVISITE"></div>
+      <div>
+        <p class="ika-logo-title">IKAVISITE</p>
+        <p class="ika-logo-sub">Centre de supervision</p>
+      </div>
+    </div>
+    <nav class="ika-nav">
+      <div class="ika-nav-section">
+        <p class="ika-nav-section-title">Navigation principale</p>
+        <a href="{% url 'tableau_de_bord' %}" class="ika-nav-item">Tableau de bord</a>
+      </div>
+
+      {% if perms.entreprise.view_entreprise or perms.entreprise.view_porteentree or perms.entreprise.view_departement or perms.entreprise.view_creneausemaine %}
+      <div class="ika-nav-section">
+        <p class="ika-nav-section-title">Configuration</p>
+        {% if perms.entreprise.view_entreprise %}<a href="{% url 'entreprise' %}" class="ika-nav-item">Paramètres entreprise</a>{% endif %}
+        {% if perms.entreprise.view_porteentree %}<a href="{% url 'liste_portes_entree' %}" class="ika-nav-item">Points d'entrée</a>{% endif %}
+        {% if perms.entreprise.view_departement %}<a href="{% url 'liste_departements' %}" class="ika-nav-item">Départements</a>{% endif %}
+        {% if perms.entreprise.view_creneausemaine %}<a href="{% url 'liste_creneaux' %}" class="ika-nav-item">Créneaux de semaine</a>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if perms.auth.view_group or perms.utilisateurs.view_utilisateur or perms.entreprise.view_personnel %}
+      <div class="ika-nav-section">
+        <p class="ika-nav-section-title">Sécurité &amp; Personnes</p>
+        {% if perms.auth.view_group %}<a href="{% url 'liste_groupes' %}" class="ika-nav-item">Rôles</a>{% endif %}
+        {% if perms.utilisateurs.view_utilisateur %}<a href="{% url 'liste_utilisateurs' %}" class="ika-nav-item">Utilisateurs</a>{% endif %}
+        {% if perms.entreprise.view_personnel %}<a href="{% url 'liste_personnel' %}" class="ika-nav-item">Personnels</a>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if perms.visites.view_visite or perms.visites.view_visiteur or perms.incidents.view_incident or perms.objets_oublies.view_objetoublie %}
+      <div class="ika-nav-section">
+        <p class="ika-nav-section-title">Visites &amp; Analyses</p>
+        {% if perms.visites.view_typevisite %}<a href="{% url 'liste_types_visite' %}" class="ika-nav-item">Types de visite</a>{% endif %}
+        {% if perms.visites.view_visite %}
+        <a href="{% url 'liste_visites' %}" class="ika-nav-item">Liste des visites</a>
+        {% endif %}
+        {% if perms.visites.view_visiteencours %}<a href="{% url 'liste_visites_encours' %}" class="ika-nav-item">Visites en cours</a>{% endif %}
+        {% if perms.visites.view_visiterminee %}<a href="{% url 'liste_visites_terminees' %}" class="ika-nav-item">Visites terminées</a>{% endif %}
+        {% if perms.visites.view_visiteexcedee %}<a href="{% url 'liste_visites_excedees' %}" class="ika-nav-item">Visites excédées</a>{% endif %}
+        {% if perms.visites.view_visiteur %}<a href="{% url 'liste_visiteurs' %}" class="ika-nav-item">Visiteurs</a>{% endif %}
+        {% if perms.incidents.view_incident %}<a href="{% url 'detection_incidents' %}" class="ika-nav-item">Détection incidents</a>{% endif %}
+        {% if perms.incidents.view_incident %}<a href="{% url 'liste_incidents' %}" class="ika-nav-item">Liste des incidents</a>{% endif %}
+        {% if perms.objets_oublies.view_objetoublie %}<a href="{% url 'detection_objets_oublies' %}" class="ika-nav-item">Détection objets</a>{% endif %}
+        {% if perms.objets_oublies.view_objetoublie %}<a href="{% url 'liste_objets_oublies' %}" class="ika-nav-item">Objets oubliés</a>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if perms.liste_noire.view_listenoire or perms.liste_noire.view_typelistenoire %}
+      <div class="ika-nav-section">
+        <p class="ika-nav-section-title">Contrôles de sécurité</p>
+        {% if perms.liste_noire.view_typelistenoire %}<a href="{% url 'liste_types_liste_noire' %}" class="ika-nav-item">Types de liste noire</a>{% endif %}
+        {% if perms.liste_noire.view_listenoire %}<a href="{% url 'liste_listes_noires' %}" class="ika-nav-item">Listes noires</a>{% endif %}
+        {% if perms.liste_noire.view_listenoire %}<a href="{% url 'liste_detections_liste_noire' %}" class="ika-nav-item">Détections liste noire</a>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if perms.utilisateurs.view_historiqueaction %}
+      <div class="ika-nav-section">
+        <p class="ika-nav-section-title">Audit &amp; Traçabilité</p>
+        <a href="{% url 'liste_historique_actions' %}" class="ika-nav-item">Historique d'actions</a>
+      </div>
+      {% endif %}
+
+      <div class="ika-nav-section" style="margin-top:.5rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,.1)">
+        <a href="{% url 'profil' %}" class="ika-nav-item">Profil</a>
+        <a href="{% url 'deconnexion' %}" class="ika-nav-item" style="color:rgba(255,255,255,.6)">Déconnexion</a>
+      </div>
+    </nav>
+  </aside>
+</div>

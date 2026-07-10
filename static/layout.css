@@ -1,0 +1,99 @@
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{background:#f7f9fc;color:#0f172a;min-height:100vh;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+input,button,select,textarea{font:inherit}
+img{max-width:100%;height:auto;display:block}
+:root{--primary:#1270b8;--primary-hover:#0f5d99;--primary-light:#e8f3fc;--secondary:#e51b35;--secondary-hover:#c4162f;--secondary-light:#fdecee;--sidebar-w:288px;--header-h:73px}
+@media(max-width:1023px){:root{--sidebar-w:0px}}
+
+/* ─── Sidebar ─── */
+.ika-sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#003b8f,#064ca8,#00449c);display:flex;flex-direction:column;height:100vh;position:fixed;top:0;left:0;z-index:30;padding-top:1.25rem;padding-bottom:1.25rem;user-select:none;box-shadow:4px 0 20px rgba(0,59,143,.15)}
+@media(max-width:1023px){.ika-sidebar{display:none}}
+.ika-logo-area{padding:0 1.25rem 1.5rem;display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+.ika-logo-icon{width:2.75rem;height:2.75rem;border-radius:.75rem;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.ika-logo-icon img{width:2.25rem;height:2.25rem;object-fit:contain}
+.ika-logo-title{font-size:1.125rem;font-weight:900;color:#fff;letter-spacing:.025em;line-height:1}
+.ika-logo-sub{font-size:.625rem;color:rgba(255,255,255,.75);font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.ika-nav{flex:1;padding:0 1rem;overflow-y:auto;scrollbar-width:thin}
+.ika-nav::-webkit-scrollbar{width:4px}
+.ika-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:4px}
+.ika-nav-section{padding:.5rem 0 .25rem}
+.ika-nav-section-title{padding:.25rem .5rem;font-size:.625rem;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;pointer-events:none}
+.ika-nav-item{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:.75rem;font-size:.875rem;font-weight:700;color:rgba(255,255,255,.85);transition:background .15s,color .15s;cursor:pointer}
+.ika-nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+.ika-nav-item.active,.ika-nav-item.ika-active{background:rgba(255,255,255,.2);color:#fff}
+.ika-nav-item svg{width:1.25rem;height:1.25rem;flex-shrink:0}
+.ika-nav-item .nav-chevron{margin-left:auto;transition:transform .2s;width:1rem;height:1rem;opacity:.6}
+.ika-nav-item .nav-chevron.open{transform:rotate(180deg)}
+.ika-submenu{padding-left:2rem;padding-right:.5rem;margin-top:.25rem}
+.ika-submenu a{display:block;padding:.5rem .5rem;font-size:.75rem;color:rgba(255,255,255,.65);border-radius:.5rem;transition:color .15s,background .15s}
+.ika-submenu a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.ika-submenu a.ika-sub-active,.ika-submenu a.active{color:#fff;background:rgba(255,255,255,.08)}
+
+/* ─── Header ─── */
+.ika-header{position:fixed;top:0;left:var(--sidebar-w);right:0;z-index:40;height:var(--header-h);border-bottom:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0 1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+@media(max-width:1023px){.ika-header{left:0;padding:0 1rem}}
+.ika-header-left{display:flex;align-items:center;gap:.75rem;flex:1;min-width:0}
+.ika-mobile-menu-btn{display:none;width:2.5rem;height:2.5rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#fff;color:#334155;align-items:center;justify-content:center;cursor:pointer;transition:color .15s,border-color .15s}
+@media(max-width:1023px){.ika-mobile-menu-btn{display:flex}}
+.ika-mobile-menu-btn:hover{color:var(--primary);border-color:rgba(18,112,184,.3)}
+.ika-search{display:flex;align-items:center;gap:.75rem;width:100%;max-width:32rem;border-radius:1rem;background:#f8fafc;border:1px solid #f1f5f9;padding:.75rem 1rem;color:#94a3b8;transition:border-color .15s,background .15s}
+.ika-search:focus-within{border-color:rgba(18,112,184,.3);background:#fff}
+.ika-search svg{width:1.25rem;height:1.25rem;flex-shrink:0}
+.ika-search input{width:100%;background:transparent;outline:none;border:none;font-size:.875rem;font-weight:600;color:#334155}
+.ika-search input::placeholder{color:#94a3b8;font-weight:400}
+@media(max-width:767px){.ika-search{display:none}}
+.ika-header-right{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+.ika-header-btn{position:relative;width:2.5rem;height:2.5rem;border-radius:.75rem;color:#334155;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:none;transition:background .15s}
+.ika-header-btn:hover{background:#f1f5f9}
+.ika-header-btn svg{width:1.25rem;height:1.25rem}
+.ika-badge{position:absolute;top:-.25rem;right:-.25rem;width:1.1rem;height:1.1rem;border-radius:50%;background:var(--secondary);color:#fff;font-size:.625rem;font-weight:900;display:flex;align-items:center;justify-content:center}
+.ika-profile-btn{display:flex;align-items:center;gap:.75rem;border-radius:1rem;padding:.375rem .5rem;cursor:pointer;border:none;background:none;transition:background .15s}
+.ika-profile-btn:hover{background:#f1f5f9}
+.ika-profile-info{text-align:right}
+@media(max-width:639px){.ika-profile-info{display:none}}
+.ika-profile-name{font-size:.875rem;font-weight:900;color:#0f172a;line-height:1.25}
+.ika-profile-role{font-size:.75rem;color:#64748b;font-weight:600}
+.ika-avatar{width:2.5rem;height:2.5rem;border-radius:50%;background:var(--primary);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.1);text-transform:uppercase}
+.ika-chevron{width:1rem;height:1rem;color:#94a3b8;transition:transform .2s}
+.ika-chevron.open{transform:rotate(180deg)}
+
+/* ─── Dropdown ─── */
+.ika-dropdown{position:absolute;top:100%;right:0;margin-top:.5rem;background:#fff;border:1px solid #f1f5f9;border-radius:1rem;box-shadow:0 10px 40px rgba(15,23,42,.12);z-index:50;overflow:hidden;min-width:200px}
+.ika-dropdown-header{padding:.75rem 1rem;border-bottom:1px solid #f1f5f9}
+.ika-dropdown-item{display:flex;align-items:center;gap:.75rem;width:100%;padding:.75rem 1rem;text-align:left;font-size:.875rem;font-weight:600;color:#334155;border:none;background:none;cursor:pointer;transition:background .15s,color .15s}
+.ika-dropdown-item:hover{background:var(--primary-light);color:var(--primary)}
+.ika-dropdown-item.danger{color:var(--secondary)}
+.ika-dropdown-item.danger:hover{background:var(--secondary-light)}
+.ika-dropdown-item svg{width:1.25rem;height:1.25rem}
+
+/* ─── Notification Dropdown ─── */
+.ika-notif-dropdown{position:absolute;top:100%;right:0;margin-top:.5rem;width:20rem;background:#fff;border:1px solid #f1f5f9;border-radius:1rem;box-shadow:0 10px 40px rgba(15,23,42,.12);z-index:50;max-height:calc(100vh - 6rem);overflow-y:auto}
+@media(max-width:639px){.ika-notif-dropdown{position:fixed;left:1rem;right:1rem;top:5rem;width:auto;max-width:none}}
+.ika-notif-header{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #f1f5f9}
+.ika-notif-count{font-size:.6875rem;font-weight:700;color:var(--secondary);background:var(--secondary-light);padding:.125rem .5rem;border-radius:9999px}
+.ika-notif-item{display:flex;gap:.75rem;width:100%;padding:.75rem 1rem;text-align:left;border:none;background:none;cursor:pointer;transition:background .15s}
+.ika-notif-item:hover{background:var(--primary-light)}
+.ika-notif-dot{margin-top:.25rem;width:.625rem;height:.625rem;border-radius:50%;flex-shrink:0}
+.ika-notif-type{font-size:.6875rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.ika-notif-title{font-size:.875rem;font-weight:600;color:#334155;line-height:1.25}
+.ika-notif-time{font-size:.75rem;color:#94a3b8}
+
+/* ─── Main Content ─── */
+.ika-main{margin-left:var(--sidebar-w);margin-top:var(--header-h);min-height:calc(100vh - var(--header-h));padding:1.75rem 1.5rem;overflow-x:hidden;background:#f7f9fc}
+@media(max-width:1023px){.ika-main{margin-left:0;padding:1.25rem 1rem}}
+.ika-content{max-width:1500px;margin:0 auto}
+
+/* ─── Mobile Sidebar Overlay ─── */
+.ika-mobile-overlay{position:fixed;inset:0;z-index:50;display:none}
+@media(max-width:1023px){.ika-mobile-overlay.active{display:block}}
+.ika-mobile-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.3);touch-action:none}
+.ika-mobile-sidebar{position:relative;width:18rem;max-width:82vw;height:100vh;height:100dvh;background:linear-gradient(180deg,#003b8f,#064ca8,#00449c);overflow-y:auto;padding-top:1.25rem;box-shadow:4px 0 30px rgba(0,0,0,.3);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.ika-mobile-sidebar .ika-logo-area{border-bottom:1px solid rgba(255,255,255,.1)}
+.ika-mobile-sidebar .ika-nav{padding:.75rem}
+.ika-mobile-sidebar .ika-nav-item{padding:.625rem .75rem;font-size:.8125rem}
+
+/* ─── Utility ─── */
+.ika-no-scroll{overflow:hidden!important;position:fixed!important;top:0;left:0;width:100%;height:100%}
+.hidden{display:none!important}

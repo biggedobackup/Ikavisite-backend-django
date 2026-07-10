@@ -1,0 +1,775 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Modifier une visite - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.vvm>*+*{margin-top:1.5rem}
+.vvm-header{display:flex;flex-direction:column;gap:1rem}
+@media(min-width:640px){.vvm-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.vvm-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:1px solid #e2e8f0;background:#fff;color:#374151;cursor:pointer;text-decoration:none;text-align:center}
+.vvm-btn-ghost:hover{background:#f8fafc}
+.vvm-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+@media(min-width:640px){.vvm-card{padding:2rem}}
+.vvm-section-title{font-size:1.125rem;font-weight:900;color:#0f172a;border-bottom:1px solid #f1f5f9;padding-bottom:.75rem}
+.vvm-grid{display:grid;gap:1.25rem}
+@media(min-width:640px){.vvm-grid{grid-template-columns:1fr 1fr}}
+.vvm-colspan{grid-column:1/-1}
+.vvm-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.vvm-required{color:var(--secondary)}
+.vvm-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
+.vvm-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vvm-input::placeholder{color:#94a3b8;font-weight:500}
+.vvm-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem;box-sizing:border-box}
+.vvm-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vvm-textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;resize:vertical;min-height:6rem;transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
+.vvm-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vvm-upload-box{border-radius:1rem;border:2px dashed rgba(18,112,184,.3);background:rgba(232,243,252,.4);padding:1rem;text-align:center}
+.vvm-upload-box img{margin:0 auto;width:6rem;height:6rem;border-radius:.75rem;object-fit:cover}
+.vvm-upload-icon{margin:0 auto;width:2.5rem;height:2.5rem;color:rgba(18,112,184,.6)}
+.vvm-upload-input{margin-top:.5rem;width:100%;font-size:.75rem}
+.vvm-upload-input::-webkit-file-upload-button{margin-right:.5rem;border-radius:.5rem;border:none;background:var(--primary);color:#fff;padding:.25rem .75rem;font-size:.75rem;font-weight:700;cursor:pointer}
+.vvm-canvas-wrap{border:2px dashed rgba(18,112,184,.3);border-radius:1rem;background:#fff;padding:.5rem;text-align:center}
+.vvm-canvas-wrap canvas{display:block;margin:0 auto;border-radius:.5rem;background:#fff;touch-action:none}
+.vvm-canvas-btn{margin-top:.5rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;padding:.375rem 1rem;font-size:.75rem;font-weight:700;color:#64748b;cursor:pointer}
+.vvm-canvas-btn:hover{background:#f1f5f9}
+.vvm-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.vvm-actions{flex-direction:row}}
+.vvm-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.vvm-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.vvm-btn-primary:hover{background:var(--primary-hover)}
+.scan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:640px){.scan-grid{grid-template-columns:1fr}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes dash{0%{stroke-dashoffset:62.8}50%{stroke-dashoffset:15.7}100%{stroke-dashoffset:62.8}}
+@media(max-width:640px){.horaire-grid{grid-template-columns:1fr!important}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="vvm">
+  <div class="vvm-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Visites</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Modifier une visite</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Modification de la visite #{{ item.pk }}.</p>
+    </div>
+    <a href="{% url 'liste_visites' %}" class="vvm-btn-ghost">Retour liste</a>
+  </div>
+
+  <form class="vvm-card" method="post" action="{% url 'modifier_visite' item.pk %}" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- Modal d'analyse de document -->
+    <div id="scanModal" class="ika-modal" style="display:none">
+      <div class="ika-modal-inner" style="max-width:420px;text-align:center" onclick="event.stopPropagation()">
+        <div class="ika-modal-body" style="padding:2.5rem 2rem">
+          <div id="scanSpinner" style="margin:0 auto 1.25rem;width:4rem;height:4rem">
+            <svg viewBox="0 0 24 24" style="animation:spin 1s linear infinite;transform-origin:center">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+              <circle cx="12" cy="12" r="10" fill="none" stroke="var(--primary)" stroke-width="3"
+                stroke-dasharray="31.4 31.4" stroke-linecap="round"
+                style="animation:dash 1.4s ease-in-out infinite"/>
+            </svg>
+          </div>
+          <div id="scanSuccess" style="display:none;margin:0 auto 1.25rem;width:4rem;height:4rem;background:#059669;border-radius:50%;display:none;align-items:center;justify-content:center">
+            <svg fill="none" stroke="#fff" viewBox="0 0 24 24" width="2.25rem" height="2.25rem"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div id="scanError" style="display:none;margin:0 auto 1.25rem;width:4rem;height:4rem;background:#dc2626;border-radius:50%;align-items:center;justify-content:center">
+            <svg fill="none" stroke="#fff" viewBox="0 0 24 24" width="2.25rem" height="2.25rem"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+          </div>
+          <p id="scanModalMsg" style="font-size:1rem;font-weight:700;color:#0f172a;margin:0">Analyse du document en cours...</p>
+          <p id="scanModalSub" style="font-size:.8125rem;font-weight:500;color:#64748b;margin-top:.5rem;margin-bottom:0">Veuillez patienter pendant l'analyse du document d'identité.</p>
+        </div>
+        <div class="ika-modal-footer" id="scanModalFooter" style="display:none;justify-content:center">
+          <button type="button" class="vva-btn vva-btn-primary" onclick="closeScanModal()">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="scan-grid">
+      <div>
+        <span class="vvm-label" style="text-align:center">Document recto</span>
+        <div class="vvm-upload-box">
+          {% if item.visiteur.document_recto %}
+          <img id="rectoPreview" src="{{ item.visiteur.document_recto.url }}" style="width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />
+          {% else %}
+          <img id="rectoPreview" style="display:none;width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />
+          {% endif %}
+          <svg class="vvm-upload-icon" id="rectoIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24" {% if item.visiteur.document_recto %}style="display:none"{% endif %}><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          <input class="vvm-upload-input" type="file" name="document_recto" accept="image/*" onchange="previewFile(this,'rectoPreview','rectoIcon')" />
+        </div>
+      </div>
+      <div>
+        <span class="vvm-label" style="text-align:center">Document verso</span>
+        <div class="vvm-upload-box">
+          {% if item.visiteur.document_verso %}
+          <img id="versoPreview" src="{{ item.visiteur.document_verso.url }}" style="width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />
+          {% else %}
+          <img id="versoPreview" style="display:none;width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />
+          {% endif %}
+          <svg class="vvm-upload-icon" id="versoIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24" {% if item.visiteur.document_verso %}style="display:none"{% endif %}><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          <input class="vvm-upload-input" type="file" name="document_verso" accept="image/*" onchange="previewFile(this,'versoPreview','versoIcon')" />
+        </div>
+      </div>
+      <div>
+        <span class="vvm-label" style="text-align:center">Photo du visiteur</span>
+        <div class="vvm-upload-box">
+          {% if item.visiteur.photo %}
+          <img id="photoPreview" src="{{ item.visiteur.photo.url }}" style="width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />
+          {% else %}
+          <img id="photoPreview" style="display:none;width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />
+          {% endif %}
+          <svg class="vvm-upload-icon" id="photoIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24" {% if item.visiteur.photo %}style="display:none"{% endif %}><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.121 17.804A8.966 8.966 0 0112 15c2.21 0 4.233.8 5.879 2.129M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <input class="vvm-upload-input" type="file" name="photo" accept="image/*" onchange="previewFile(this,'photoPreview','photoIcon')" />
+          <input type="hidden" name="photo_portrait_data" id="photoPortraitData" />
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div>
+        <span class="vvm-label" style="text-align:center">Signature d'entrée</span>
+        {% if item.signature_entree %}
+        <div style="padding:.5rem;border-radius:.75rem;background:#f8fafc;margin-bottom:.5rem;text-align:center">
+          <img src="{{ item.signature_entree.url }}" alt="Signature entrée" style="max-height:3rem;border-radius:.375rem" />
+        </div>
+        {% endif %}
+        <div class="vvm-canvas-wrap">
+          <canvas id="signatureEntreeCanvas" width="400" height="150"></canvas>
+          <input type="hidden" name="signature_entree_data" id="signatureEntreeData" value="{{ request.POST.signature_entree_data|default:'' }}" />
+          <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.5rem">
+            <button type="button" class="vvm-canvas-btn" onclick="clearSignature('entree')">Effacer</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="vvm-label" style="text-align:center">Signature de sortie</span>
+        {% if item.signature_sortie %}
+        <div style="padding:.5rem;border-radius:.75rem;background:#f8fafc;margin-bottom:.5rem;text-align:center">
+          <img src="{{ item.signature_sortie.url }}" alt="Signature sortie" style="max-height:3rem;border-radius:.375rem" />
+        </div>
+        {% endif %}
+        <div class="vvm-canvas-wrap">
+          <canvas id="signatureSortieCanvas" width="400" height="150"></canvas>
+          <input type="hidden" name="signature_sortie_data" id="signatureSortieData" value="{{ request.POST.signature_sortie_data|default:'' }}" />
+          <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.5rem">
+            <button type="button" class="vvm-canvas-btn" onclick="clearSignature('sortie')">Effacer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem">
+      <h2 class="vvm-section-title">Identite du visiteur</h2>
+      <div class="vvm-grid" style="margin-top:1.25rem">
+        <div><label class="vvm-label">Prenom <span class="vvm-required">*</span></label><input class="vvm-input" type="text" name="v_prenom" value="{{ item.visiteur.prenom }}" required /></div>
+        <div><label class="vvm-label">Nom <span class="vvm-required">*</span></label><input class="vvm-input" type="text" name="v_nom" value="{{ item.visiteur.nom }}" required /></div>
+        <div><label class="vvm-label">Genre <span class="vvm-required">*</span></label>
+          <select class="vvm-select" name="v_genre" required>
+            <option value="">Selectionner</option>
+            <option value="Homme" {% if item.visiteur.genre == 'Homme' %}selected{% endif %}>Homme</option>
+            <option value="Femme" {% if item.visiteur.genre == 'Femme' %}selected{% endif %}>Femme</option>
+          </select>
+        </div>
+        <div><label class="vvm-label">Date de naissance</label><input class="vvm-input" type="date" name="v_date_naissance" value="{{ item.visiteur.date_naissance|default:'' }}" /></div>
+        <div><label class="vvm-label">Lieu de naissance</label><input class="vvm-input" type="text" name="v_lieu_naissance" value="{{ item.visiteur.lieu_naissance|default:'' }}" placeholder="Lieu de naissance" /></div>
+        <div><label class="vvm-label">Nationalite</label>
+          <select class="vvm-select" name="v_nationalite">
+            <option value="">Selectionner</option>
+            {% for nat in nationalite_options %}<option value="{{ nat }}" {% if item.visiteur.nationalite == nat %}selected{% endif %}>{{ nat }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="vvm-label">Profession</label><input class="vvm-input" type="text" name="v_profession" value="{{ item.visiteur.profession|default:'' }}" placeholder="Profession" /></div>
+        <div><label class="vvm-label">Telephone</label><input class="vvm-input" type="text" name="v_telephone" value="{{ item.visiteur.telephone|default:'' }}" placeholder="+225 00 00 00 00" /></div>
+        <div><label class="vvm-label">Adresse complete</label><input class="vvm-input" type="text" name="v_adresse" value="{{ item.visiteur.adresse|default:'' }}" placeholder="Adresse complete" /></div>
+        <div><label class="vvm-label">Email</label><input class="vvm-input" type="email" name="v_email" value="{{ item.visiteur.email|default:'' }}" placeholder="email@exemple.com" /></div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem">
+      <h2 class="vvm-section-title">Document d'identite</h2>
+      <div class="vvm-grid" style="margin-top:1.25rem">
+        <div><label class="vvm-label">Type de document</label>
+          <select class="vvm-select" name="v_piece_identite">
+            <option value="">Selectionner</option>
+            <option value="CNI" {% if item.visiteur.piece_identite == 'CNI' %}selected{% endif %}>CNI</option>
+            <option value="PASSEPORT" {% if item.visiteur.piece_identite == 'PASSEPORT' %}selected{% endif %}>Passeport</option>
+            <option value="PERMIS" {% if item.visiteur.piece_identite == 'PERMIS' %}selected{% endif %}>Permis de conduire</option>
+            <option value="AUTRE" {% if item.visiteur.piece_identite == 'AUTRE' %}selected{% endif %}>Autre</option>
+          </select>
+        </div>
+        <div><label class="vvm-label">Numero du document</label><input class="vvm-input" type="text" name="v_numero_piece" value="{{ item.visiteur.numero_piece|default:'' }}" placeholder="Numero" /></div>
+        <div><label class="vvm-label">Numero NIP</label><input class="vvm-input" type="text" name="v_nip" value="{{ item.visiteur.numero_nip|default:'' }}" placeholder="NIP" /></div>
+        <div><label class="vvm-label">Pays de delivrance</label>
+          <select class="vvm-select" name="v_pays_delivrance">
+            <option value="">Selectionner</option>
+            {% for p in pays_options %}<option value="{{ p }}" {% if item.visiteur.pays_delivrance == p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="vvm-label">Date de delivrance</label><input class="vvm-input" type="date" name="v_date_delivrance" value="{{ item.visiteur.date_delivrance|default:'' }}" /></div>
+        <div><label class="vvm-label">Date d'expiration</label><input class="vvm-input" type="date" name="date_expiration" value="{{ item.date_expiration|date:'Y-m-d' }}" /></div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem">
+      <h2 class="vvm-section-title">Informations de la visite</h2>
+      <div class="vvm-grid" style="margin-top:1.25rem">
+        <div><label class="vvm-label">Personnel visite</label>
+          <select class="vvm-select" name="personnel" id="personnelSelect" onchange="fillDepartement()">
+            <option value="">Selectionner</option>
+            {% for p in personnels %}<option value="{{ p.pk }}" data-departement-id="{{ p.departement_id|default:'' }}" {% if p.pk == item.personnel_id %}selected{% endif %}>{{ p.prenom }} {{ p.nom }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="vvm-label">Departement</label>
+          <select class="vvm-select" name="departement">
+            <option value="">Selectionner</option>
+            {% for d in departements %}<option value="{{ d.pk }}" {% if d.pk == item.personnel.departement_id %}selected{% endif %}>{{ d.nom }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="vvm-label">Type de visite <span class="vvm-required">*</span></label>
+          <select class="vvm-select" name="type_visite" required>
+            <option value="">Selectionner</option>
+            {% for t in types %}<option value="{{ t.pk }}" {% if t.pk == item.type_visite_id %}selected{% endif %}>{{ t.nom }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="vvm-label">Porte d'entree <span class="vvm-required">*</span></label>
+          <select class="vvm-select" name="porte_entree" required>
+            <option value="">Selectionner</option>
+            {% for p in portes %}<option value="{{ p.pk }}" {% if p.pk == item.porte_entree_id %}selected{% endif %}>{{ p.titre }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="vvm-label">Motif de la visite</label><input class="vvm-input" type="text" name="motif" value="{{ item.motif|default:'' }}" placeholder="Reunion, entretien, livraison..." /></div>
+        <div><label class="vvm-label">Numero de badge</label><input class="vvm-input" type="text" name="numero_badge" value="{{ item.numero_badge|default:'' }}" placeholder="B-001" /></div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem">
+      <h2 class="vvm-section-title">Horaires</h2>
+      <div class="horaire-grid" style="display:grid;gap:1.25rem;grid-template-columns:1fr 1fr 1fr;margin-top:1.25rem">
+        <div><label class="vvm-label">Date et heure d'arrivee <span class="vvm-required">*</span></label><input class="vvm-input" type="datetime-local" name="arrival_datetime" value="{{ item.date_visite|date:'Y-m-d' }}T{{ item.date_visite|time:'H:i' }}" required /></div>
+        <div><label class="vvm-label">Date et heure depart prevue <span class="vvm-required">*</span></label><input class="vvm-input" type="datetime-local" name="planned_departure_datetime" value="{% if item.date_depart_prevue %}{{ item.date_depart_prevue|date:'Y-m-d' }}T{{ item.heure_depart_prevue|time:'H:i' }}{% endif %}" required /></div>
+        <div><label class="vvm-label">Date et heure de sortie</label><input class="vvm-input" type="datetime-local" name="departure_datetime" value="{% if item.date_depart %}{{ item.date_depart|date:'Y-m-d' }}T{{ item.heure_depart|time:'H:i' }}{% endif %}" /></div>
+      </div>
+      <div style="margin-top:1.25rem"><label class="vvm-label">Observations</label><textarea class="vvm-textarea" rows="3" name="observations" placeholder="Informations complementaires...">{{ item.observations|default:'' }}</textarea></div>
+    </div>
+
+    <div class="vvm-actions">
+      <a href="{% url 'detail_visite' item.pk %}" class="vvm-btn-ghost">Annuler</a>
+      <button type="submit" class="vvm-btn vvm-btn-primary">Enregistrer les modifications</button>
+    </div>
+  </form>
+</div>
+
+<script>
+function fillDepartement() {
+  var sel = document.getElementById('personnelSelect');
+  var dep = sel.options[sel.selectedIndex]?.getAttribute('data-departement-id');
+  if (dep) document.querySelector('[name="departement"]').value = dep;
+}
+(function() {
+  function setupSignaturePad(canvasId, inputId) {
+    var canvas = document.getElementById(canvasId);
+    canvas.style.width = '100%';
+    canvas.style.height = '150px';
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 150;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    var saved = document.getElementById(inputId).value;
+    if (saved) {
+      var img = new Image();
+      img.onload = function() { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+      img.src = saved;
+    }
+    var drawing = false;
+    function getPos(e) {
+      var rect = canvas.getBoundingClientRect();
+      var x, y;
+      if (e.touches) { x = e.touches[0].clientX - rect.left; y = e.touches[0].clientY - rect.top; }
+      else { x = e.clientX - rect.left; y = e.clientY - rect.top; }
+      return { x: x * (canvas.width / rect.width), y: y * (canvas.height / rect.height) };
+    }
+    function startDraw(e) { e.preventDefault(); drawing = true; var pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+    function draw(e) { e.preventDefault(); if (!drawing) return; var pos = getPos(e); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a'; ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
+    function stopDraw(e) { e.preventDefault(); if (drawing) { drawing = false; document.getElementById(inputId).value = canvas.toDataURL('image/png'); } }
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseleave', stopDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive:false});
+    canvas.addEventListener('touchmove', draw, {passive:false});
+    canvas.addEventListener('touchend', stopDraw, {passive:false});
+  }
+  setupSignaturePad('signatureEntreeCanvas', 'signatureEntreeData');
+  setupSignaturePad('signatureSortieCanvas', 'signatureSortieData');
+  window.clearSignature = function(prefix) {
+    var name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    var canvas = document.getElementById('signature' + name + 'Canvas');
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    document.getElementById('signature' + name + 'Data').value = '';
+  };
+  window.previewFile = window.previewFile || function(input, imgId, iconId) {
+    if (!input.files || !input.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var preview = document.getElementById(imgId);
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      if (iconId) { var icon = document.getElementById(iconId); if (icon) icon.style.display = 'none'; }
+    };
+    reader.readAsDataURL(input.files[0]);
+  };
+  window.updatePreview = window.updatePreview || function(imgId, iconId, dataUrl) {
+    var img = document.getElementById(imgId);
+    if (img) { img.src = dataUrl; img.style.display = 'block'; }
+    var icon = document.getElementById(iconId);
+    if (icon) icon.style.display = 'none';
+  };
+  window.setFieldValue = window.setFieldValue || function(name, value) {
+    var el = document.querySelector('[name="' + name + '"]');
+    if (el && !el.value) el.value = value;
+  };
+  window.formatRegulaDate = window.formatRegulaDate || function(value) {
+    if (!value) return '';
+    var m = value.match(/^(\d{2})[.\-\\/](\d{2})[.\-\\/](\d{4})$/);
+    if (m) return m[3] + '-' + m[2] + '-' + m[1];
+    return value.substring(0, 10);
+  };
+  window.mapDocType = window.mapDocType || function(code) {
+    var c = code.toUpperCase();
+    if (c === 'P' || c === 'PASSPORT' || c.indexOf('PASSPORT') >= 0) return 'PASSEPORT';
+    if (c === 'I' || c === 'ID' || c === 'CNI' || c.indexOf('IDENTITY') >= 0 || c.indexOf('NATIONAL') >= 0) return 'CNI';
+    if (c === 'D' || c.indexOf('DRIVER') >= 0 || c.indexOf('PERMIS') >= 0 || c.indexOf('LICENSE') >= 0) return 'PERMIS';
+    return 'AUTRE';
+  };
+  window.detectDocType = window.detectDocType || function(fieldList, result) {
+    var get = function(name) {
+      var f = fieldList.find(function(x) { return x.fieldName === name; });
+      return f && f.value != null ? String(f.value) : '';
+    };
+    var docClass = get('Document Class Code') || get('DocumentType') || get('Type');
+    if (docClass) return window.mapDocType(docClass);
+    try { var docInfo = result.documentType ? result.documentType() : null; if (docInfo && docInfo.documentName) return window.mapDocType(docInfo.documentName); } catch(e) {}
+    var rawName = (result.rawResponse && result.rawResponse.documentType && result.rawResponse.documentType.oneCandidate && result.rawResponse.documentType.oneCandidate.documentName) || '';
+    if (rawName) return window.mapDocType(rawName);
+    return '';
+  };
+})();
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "@regulaforensics/vp-frontend-document-components": "{% static 'regula/main.js' %}"
+  }
+}
+</script>
+<script type="module">
+import { DocumentReaderApi, Configuration, GraphicFieldType, Scenario } from '@regulaforensics/vp-frontend-document-components';
+
+var regulaConfig = { basePath: '{{ regula_api_url|escapejs }}' };
+var regulaKey = '{{ regula_api_key|escapejs }}';
+if (regulaKey) regulaConfig.apiKey = regulaKey;
+var regulaApi = new DocumentReaderApi(new Configuration(regulaConfig));
+
+var isoToDemonym = {
+  'AFG': 'Afghane', 'ZAF': 'Sud-africaine', 'ALB': 'Albanaise', 'DZA': 'Algérienne', 'DEU': 'Allemande',
+  'USA': 'Américaine', 'AND': 'Andorrane', 'AGO': 'Angolaise', 'ARG': 'Argentine', 'ARM': 'Arménienne',
+  'AUS': 'Australienne', 'AUT': 'Autrichienne', 'AZE': 'Azerbaïdjanaise', 'BHS': 'Bahamienne',
+  'BHR': 'Bahreïnienne', 'BGD': 'Bangladeshie', 'BRB': 'Barbadienne', 'BEL': 'Belge', 'BLZ': 'Bélizienne',
+  'BEN': 'Béninoise', 'BTN': 'Bhoutanaise', 'BLR': 'Biélorusse', 'MMR': 'Birmane', 'BOL': 'Bolivienne',
+  'BIH': 'Bosnienne', 'BWA': 'Botswanaise', 'BRA': 'Brésilienne', 'GBR': 'Britannique', 'BRN': 'Brunéienne',
+  'BGR': 'Bulgare', 'BFA': 'Burkinabè', 'BDI': 'Burundaise', 'KHM': 'Cambodgienne', 'CMR': 'Camerounaise',
+  'CAN': 'Canadienne', 'CPV': 'Cap-verdienne', 'CAF': 'Centrafricaine', 'CHL': 'Chilienne', 'CHN': 'Chinoise',
+  'CYP': 'Chypriote', 'COL': 'Colombienne', 'COM': 'Comorienne', 'COG': 'Congolaise', 'PRK': 'Nord-coréenne',
+  'KOR': 'Coréenne', 'CRI': 'Costaricaine', 'HRV': 'Croate', 'CUB': 'Cubaine', 'CIV': 'Ivoirienne',
+  'DNK': 'Danoise', 'DJI': 'Djiboutienne', 'DOM': 'Dominicaine', 'DMA': 'Dominiquaise', 'EGY': 'Égyptienne',
+  'ARE': 'Émiratie', 'ECU': 'Équatorienne', 'ERI': 'Érythréenne', 'ESP': 'Espagnole', 'EST': 'Estonienne',
+  'SWZ': 'Eswatinienne', 'ETH': 'Éthiopienne', 'FJI': 'Fidjienne', 'FIN': 'Finlandaise', 'FRA': 'Française',
+  'GAB': 'Gabonaise', 'GMB': 'Gambienne', 'GEO': 'Géorgienne', 'GHA': 'Ghanéenne', 'GRC': 'Grecque',
+  'GRD': 'Grenadienne', 'GTM': 'Guatémaltèque', 'GIN': 'Guinéenne', 'GNB': 'Bissau-Guinéenne',
+  'GUY': 'Guyanienne', 'HTI': 'Haïtienne', 'HND': 'Hondurienne', 'HUN': 'Hongroise', 'IND': 'Indienne',
+  'IDN': 'Indonésienne', 'IRQ': 'Irakienne', 'IRN': 'Iranienne', 'IRL': 'Irlandaise', 'ISL': 'Islandaise',
+  'ISR': 'Israélienne', 'ITA': 'Italienne', 'JAM': 'Jamaïcaine', 'JPN': 'Japonaise', 'JOR': 'Jordanienne',
+  'KAZ': 'Kazakhstanaise', 'KEN': 'Kényane', 'KGZ': 'Kirghize', 'KIR': 'Kiribatienne', 'KWT': 'Koweïtienne',
+  'LAO': 'Laotienne', 'LSO': 'Lesothane', 'LVA': 'Lettone', 'LBN': 'Libanaise', 'LBR': 'Libérienne',
+  'LBY': 'Libyenne', 'LIE': 'Liechtensteinoise', 'LTU': 'Lituanienne', 'LUX': 'Luxembourgeoise',
+  'MKD': 'Macédonienne', 'MDG': 'Malgache', 'MYS': 'Malaisienne', 'MWI': 'Malawienne', 'MDV': 'Maldivienne',
+  'MLI': 'Malienne', 'MLT': 'Maltaise', 'MAR': 'Marocaine', 'MHL': 'Marshallaise', 'MRT': 'Mauritanienne',
+  'MUS': 'Mauricienne', 'MEX': 'Mexicaine', 'FSM': 'Micronésienne', 'MDA': 'Moldave', 'MCO': 'Monégasque',
+  'MNG': 'Mongole', 'MNE': 'Monténégrine', 'MOZ': 'Mozambicaine', 'NAM': 'Namibienne', 'NRU': 'Nauruane',
+  'NLD': 'Néerlandaise', 'NZL': 'Néo-zélandaise', 'NPL': 'Népalaise', 'NIC': 'Nicaraguayenne',
+  'NER': 'Nigérienne', 'NGA': 'Nigériane', 'NOR': 'Norvégienne', 'OMN': 'Omanaise', 'UGA': 'Ougandaise',
+  'UZB': 'Ouzbèke', 'PAK': 'Pakistanaise', 'PLW': 'Palaosienne', 'PSE': 'Palestinienne', 'PAN': 'Panaméenne',
+  'PNG': 'Papouane-néo-guinéenne', 'PRY': 'Paraguayenne', 'PER': 'Péruvienne', 'PHL': 'Philippine',
+  'POL': 'Polonaise', 'PRT': 'Portugaise', 'QAT': 'Qatarie', 'ROU': 'Roumaine', 'RUS': 'Russe',
+  'RWA': 'Rwandaise', 'LCA': 'Saint-lucienne', 'SMR': 'Saint-marinaise', 'SLB': 'Salomonaise',
+  'SLV': 'Salvadorienne', 'WSM': 'Samoane', 'STP': 'Santoméenne', 'SAU': 'Saoudienne',
+  'SEN': 'Sénégalaise', 'SRB': 'Serbe', 'SYC': 'Seychelloise', 'SLE': 'Sierra-léonaise',
+  'SGP': 'Singapourienne', 'SVK': 'Slovaque', 'SVN': 'Slovène', 'SOM': 'Somalienne', 'SDN': 'Soudanaise',
+  'LKA': 'Sri-lankaise', 'SWE': 'Suédoise', 'CHE': 'Suisse', 'SUR': 'Surinamaise',
+  'SYR': 'Syrienne', 'TJK': 'Tadjike', 'TZA': 'Tanzanienne', 'TCD': 'Tchadienne', 'CZE': 'Tchèque',
+  'THA': 'Thaïlandaise', 'TLS': 'Timoraise', 'TGO': 'Togolaise', 'TON': 'Tongienne', 'TTO': 'Trinidadienne',
+  'TUN': 'Tunisienne', 'TKM': 'Turkmène', 'TUR': 'Turque', 'TUV': 'Tuvaluane', 'UKR': 'Ukrainienne',
+  'URY': 'Uruguayenne', 'VUT': 'Vanuatuane', 'VAT': 'Vaticane', 'VEN': 'Vénézuélienne', 'VNM': 'Vietnamienne',
+  'YEM': 'Yéménite', 'ZAR': 'Zaïroise', 'ZMB': 'Zambienne', 'ZWE': 'Zimbabwéenne',
+};
+
+var countryToDemonym = {
+  'AFGHANISTAN': 'Afghane', 'SOUTH AFRICA': 'Sud-africaine', 'ALBANIA': 'Albanaise', 'ALGERIA': 'Algérienne',
+  'GERMANY': 'Allemande', 'USA': 'Américaine', 'ANDORRA': 'Andorrane', 'ANGOLA': 'Angolaise',
+  'ARGENTINA': 'Argentine', 'ARMENIA': 'Arménienne', 'AUSTRALIA': 'Australienne', 'AUSTRIA': 'Autrichienne',
+  'AZERBAIJAN': 'Azerbaïdjanaise', 'BAHAMAS': 'Bahamienne', 'BAHRAIN': 'Bahreïnienne', 'BANGLADESH': 'Bangladeshie',
+  'BARBADOS': 'Barbadienne', 'BELGIUM': 'Belge', 'BELIZE': 'Bélizienne', 'BENIN': 'Béninoise',
+  'BHUTAN': 'Bhoutanaise', 'BELARUS': 'Biélorusse', 'MYANMAR': 'Birmane', 'BOLIVIA': 'Bolivienne',
+  'BOSNIA': 'Bosnienne', 'BOTSWANA': 'Botswanaise', 'BRAZIL': 'Brésilienne', 'UNITED KINGDOM': 'Britannique',
+  'BRUNEI': 'Brunéienne', 'BULGARIA': 'Bulgare', 'BURKINA FASO': 'Burkinabè', 'BURUNDI': 'Burundaise',
+  'CAMBODIA': 'Cambodgienne', 'CAMEROON': 'Camerounaise', 'CANADA': 'Canadienne', 'CAPE VERDE': 'Cap-verdienne',
+  'CENTRAL AFRICAN REPUBLIC': 'Centrafricaine', 'CHILE': 'Chilienne', 'CHINA': 'Chinoise', 'CYPRUS': 'Chypriote',
+  'COLOMBIA': 'Colombienne', 'COMOROS': 'Comorienne', 'CONGO': 'Congolaise', 'KOREA': 'Coréenne',
+  'COSTA RICA': 'Costaricaine', 'CROATIA': 'Croate', 'CUBA': 'Cubaine', "CÔTE D'IVOIRE": 'Ivoirienne',
+  'COTE DIVOIRE': 'Ivoirienne', 'IVORY COAST': 'Ivoirienne', 'DENMARK': 'Danoise', 'DJIBOUTI': 'Djiboutienne', 'DOMINICA': 'Dominiquaise',
+  'EGYPT': 'Égyptienne', 'UAE': 'Émiratie', 'ECUADOR': 'Équatorienne', 'ERITREA': 'Érythréenne',
+  'SPAIN': 'Espagnole', 'ESTONIA': 'Estonienne', 'ESWATINI': 'Eswatinienne', 'ETHIOPIA': 'Éthiopienne',
+  'FIJI': 'Fidjienne', 'FINLAND': 'Finlandaise', 'FRANCE': 'Française', 'GABON': 'Gabonaise', 'GAMBIA': 'Gambienne',
+  'GEORGIA': 'Géorgienne', 'GHANA': 'Ghanéenne', 'GREECE': 'Grecque', 'GRENADA': 'Grenadienne',
+  'GUATEMALA': 'Guatémaltèque', 'GUINEA': 'Guinéenne', 'GUINEA-BISSAU': 'Bissau-Guinéenne', 'GUYANA': 'Guyanienne',
+  'HAITI': 'Haïtienne', 'HONDURAS': 'Hondurienne', 'HUNGARY': 'Hongroise', 'INDIA': 'Indienne',
+  'INDONESIA': 'Indonésienne', 'IRAQ': 'Irakienne', 'IRAN': 'Iranienne', 'IRELAND': 'Irlandaise',
+  'ICELAND': 'Islandaise', 'ISRAEL': 'Israélienne', 'ITALY': 'Italienne', 'JAMAICA': 'Jamaïcaine',
+  'JAPAN': 'Japonaise', 'JORDAN': 'Jordanienne', 'KAZAKHSTAN': 'Kazakhstanaise', 'KENYA': 'Kényane',
+  'KYRGYZSTAN': 'Kirghize', 'KIRIBATI': 'Kiribatienne', 'KUWAIT': 'Koweïtienne', 'LAOS': 'Laotienne',
+  'LESOTHO': 'Lesothane', 'LATVIA': 'Lettone', 'LEBANON': 'Libanaise', 'LIBERIA': 'Libérienne',
+  'LIBYA': 'Libyenne', 'LIECHTENSTEIN': 'Liechtensteinoise', 'LITHUANIA': 'Lituanienne',
+  'LUXEMBOURG': 'Luxembourgeoise', 'MACEDONIA': 'Macédonienne', 'MADAGASCAR': 'Malgache',
+  'MALAYSIA': 'Malaisienne', 'MALAWI': 'Malawienne', 'MALDIVES': 'Maldivienne', 'MALI': 'Malienne',
+  'MALTA': 'Maltaise', 'MOROCCO': 'Marocaine', 'MARSHALL ISLANDS': 'Marshallaise', 'MAURITANIA': 'Mauritanienne',
+  'MAURITIUS': 'Mauricienne', 'MEXICO': 'Mexicaine', 'MICRONESIA': 'Micronésienne', 'MOLDOVA': 'Moldave',
+  'MONACO': 'Monégasque', 'MONGOLIA': 'Mongole', 'MONTENEGRO': 'Monténégrine', 'MOZAMBIQUE': 'Mozambicaine',
+  'NAMIBIA': 'Namibienne', 'NAURU': 'Nauruane', 'NETHERLANDS': 'Néerlandaise', 'NEW ZEALAND': 'Néo-zélandaise',
+  'NEPAL': 'Népalaise', 'NICARAGUA': 'Nicaraguayenne', 'NIGER': 'Nigérienne', 'NIGERIA': 'Nigériane',
+  'NORTH KOREA': 'Nord-coréenne', 'NORWAY': 'Norvégienne', 'OMAN': 'Omanaise', 'UGANDA': 'Ougandaise',
+  'UZBEKISTAN': 'Ouzbèke', 'PAKISTAN': 'Pakistanaise', 'PALAU': 'Palaosienne', 'PALESTINE': 'Palestinienne',
+  'PANAMA': 'Panaméenne', 'PAPUA NEW GUINEA': 'Papouane-néo-guinéenne', 'PARAGUAY': 'Paraguayenne',
+  'PERU': 'Péruvienne', 'PHILIPPINES': 'Philippine', 'POLAND': 'Polonaise', 'PORTUGAL': 'Portugaise',
+  'QATAR': 'Qatarie', 'ROMANIA': 'Roumaine', 'RUSSIA': 'Russe', 'RWANDA': 'Rwandaise',
+  'SAINT LUCIA': 'Saint-lucienne', 'SAN MARINO': 'Saint-marinaise', 'SOLOMON ISLANDS': 'Salomonaise',
+  'EL SALVADOR': 'Salvadorienne', 'SAMOA': 'Samoane', 'SAO TOME': 'Santoméenne', 'SAUDI ARABIA': 'Saoudienne',
+  'SENEGAL': 'Sénégalaise', 'SERBIA': 'Serbe', 'SEYCHELLES': 'Seychelloise', 'SIERRA LEONE': 'Sierra-léonaise',
+  'SINGAPORE': 'Singapourienne', 'SLOVAKIA': 'Slovaque', 'SLOVENIA': 'Slovène', 'SOMALIA': 'Somalienne',
+  'SUDAN': 'Soudanaise', 'SRI LANKA': 'Sri-lankaise', 'SWEDEN': 'Suédoise', 'SWITZERLAND': 'Suisse',
+  'SURINAME': 'Surinamaise', 'SWAZILAND': 'Swazie', 'SYRIA': 'Syrienne', 'TAJIKISTAN': 'Tadjike',
+  'TANZANIA': 'Tanzanienne', 'CHAD': 'Tchadienne', 'CZECH REPUBLIC': 'Tchèque', 'THAILAND': 'Thaïlandaise',
+  'TIMOR-LESTE': 'Timoraise', 'TOGO': 'Togolaise', 'TONGA': 'Tongienne', 'TRINIDAD': 'Trinidadienne',
+  'TUNISIA': 'Tunisienne', 'TURKMENISTAN': 'Turkmène', 'TURKEY': 'Turque', 'TUVALU': 'Tuvaluane',
+  'UKRAINE': 'Ukrainienne', 'URUGUAY': 'Uruguayenne', 'VANUATU': 'Vanuatuane', 'VATICAN': 'Vaticane',
+  'VENEZUELA': 'Vénézuélienne', 'VIETNAM': 'Vietnamienne', 'YEMEN': 'Yéménite', 'ZAIRE': 'Zaïroise',
+  'ZAMBIA': 'Zambienne', 'ZIMBABWE': 'Zimbabwéenne',
+};
+
+var issuingStateToFrenchMap = {
+  'AFG': 'Afghanistan', 'ZAF': 'Afrique du Sud', 'ALB': 'Albanie', 'DZA': 'Algérie', 'DEU': 'Allemagne',
+  'AGO': 'Angola', 'SAU': 'Arabie Saoudite', 'ARG': 'Argentine', 'AUS': 'Australie', 'AUT': 'Autriche',
+  'BEL': 'Belgique', 'BEN': 'Bénin', 'BRA': 'Brésil', 'BFA': 'Burkina Faso', 'BDI': 'Burundi',
+  'KHM': 'Cambodge', 'CMR': 'Cameroun', 'CAN': 'Canada', 'CPV': 'Cap-Vert', 'CHN': 'Chine',
+  'COL': 'Colombie', 'COM': 'Comores', 'KOR': 'Corée du Sud', 'CRI': 'Costa Rica',
+  'CIV': "Côte d'Ivoire", 'HRV': 'Croatie', 'DNK': 'Danemark', 'DJI': 'Djibouti',
+  'EGY': 'Égypte', 'ARE': 'Émirats arabes unis', 'ESP': 'Espagne', 'EST': 'Estonie',
+  'USA': 'États-Unis', 'ETH': 'Éthiopie', 'FIN': 'Finlande', 'FRA': 'France', 'GAB': 'Gabon',
+  'GMB': 'Gambie', 'GHA': 'Ghana', 'GRC': 'Grèce', 'GIN': 'Guinée', 'GNB': 'Guinée-Bissau',
+  'GNQ': 'Guinée équatoriale', 'HTI': 'Haïti', 'HUN': 'Hongrie', 'IND': 'Inde',
+  'IDN': 'Indonésie', 'IRN': 'Iran', 'IRQ': 'Iraq', 'IRL': 'Irlande', 'ISL': 'Islande',
+  'ISR': 'Israël', 'ITA': 'Italie', 'JPN': 'Japon', 'JOR': 'Jordanie', 'KEN': 'Kenya',
+  'KWT': 'Koweït', 'LAO': 'Laos', 'LSO': 'Lesotho', 'LVA': 'Lettonie', 'LBN': 'Liban',
+  'LBR': 'Liberia', 'LBY': 'Libye', 'LIE': 'Liechtenstein', 'LTU': 'Lituanie', 'LUX': 'Luxembourg',
+  'MDG': 'Madagascar', 'MYS': 'Malaisie', 'MWI': 'Malawi', 'MLI': 'Mali', 'MLT': 'Malte',
+  'MAR': 'Maroc', 'MUS': 'Maurice', 'MRT': 'Mauritanie', 'MEX': 'Mexique',
+  'MCO': 'Monaco', 'MNG': 'Mongolie', 'MNE': 'Monténégro', 'MOZ': 'Mozambique',
+  'NAM': 'Namibie', 'NPL': 'Népal', 'NIC': 'Nicaragua', 'NER': 'Niger', 'NGA': 'Nigeria',
+  'NOR': 'Norvège', 'NZL': 'Nouvelle-Zélande', 'UGA': 'Ouganda', 'UZB': 'Ouzbékistan',
+  'PAK': 'Pakistan', 'PAN': 'Panama', 'PRY': 'Paraguay', 'NLD': 'Pays-Bas', 'PER': 'Pérou',
+  'PHL': 'Philippines', 'POL': 'Pologne', 'PRT': 'Portugal', 'QAT': 'Qatar',
+  'CAF': 'République centrafricaine', 'COD': 'République démocratique du Congo',
+  'COG': 'République du Congo', 'ROU': 'Roumanie', 'GBR': 'Royaume-Uni', 'RUS': 'Russie',
+  'RWA': 'Rwanda', 'SEN': 'Sénégal', 'SRB': 'Serbie', 'SYC': 'Seychelles',
+  'SLE': 'Sierra Leone', 'SGP': 'Singapour', 'SVK': 'Slovaquie', 'SVN': 'Slovénie',
+  'SOM': 'Somalie', 'SDN': 'Soudan', 'SSD': 'Soudan du Sud', 'LKA': 'Sri Lanka',
+  'SWE': 'Suède', 'CHE': 'Suisse', 'SUR': 'Suriname', 'SYR': 'Syrie',
+  'TJK': 'Tadjikistan', 'TZA': 'Tanzanie', 'TCD': 'Tchad', 'CZE': 'République tchèque',
+  'THA': 'Thaïlande', 'TGO': 'Togo', 'TUN': 'Tunisie', 'TKM': 'Turkménistan',
+  'TUR': 'Turquie', 'UKR': 'Ukraine', 'URY': 'Uruguay', 'VAT': 'Vatican',
+  'VEN': 'Venezuela', 'VNM': 'Viêt Nam', 'YEM': 'Yémen', 'ZMB': 'Zambie', 'ZWE': 'Zimbabwe',
+  'AFGHANISTAN': 'Afghanistan', 'SOUTH AFRICA': 'Afrique du Sud', 'ALBANIA': 'Albanie',
+  'ALGERIA': 'Algérie', 'GERMANY': 'Allemagne', 'ANGOLA': 'Angola', 'SAUDI ARABIA': 'Arabie Saoudite',
+  'ARGENTINA': 'Argentine', 'AUSTRALIA': 'Australie', 'AUSTRIA': 'Autriche', 'BELGIUM': 'Belgique',
+  'BENIN': 'Bénin', 'BRAZIL': 'Brésil', 'BURKINA FASO': 'Burkina Faso', 'BURUNDI': 'Burundi',
+  'CAMBODIA': 'Cambodge', 'CAMEROON': 'Cameroun', 'CANADA': 'Canada', 'CAPE VERDE': 'Cap-Vert',
+  'CHINA': 'Chine', 'COLOMBIA': 'Colombie', 'COMOROS': 'Comores', 'SOUTH KOREA': 'Corée du Sud',
+  'COSTA RICA': 'Costa Rica', 'COTE D\'IVOIRE': "Côte d'Ivoire", 'COTE DIVOIRE': "Côte d'Ivoire",
+  "CÔTE D'IVOIRE": "Côte d'Ivoire",
+  'IVORY COAST': "Côte d'Ivoire", 'CROATIA': 'Croatie', 'DENMARK': 'Danemark', 'DJIBOUTI': 'Djibouti',
+  'EGYPT': 'Égypte', 'UAE': 'Émirats arabes unis', 'UNITED ARAB EMIRATES': 'Émirats arabes unis',
+  'SPAIN': 'Espagne', 'ESTONIA': 'Estonie', 'UNITED STATES': 'États-Unis',
+  'ETHIOPIA': 'Éthiopie', 'FINLAND': 'Finlande', 'FRANCE': 'France', 'GABON': 'Gabon',
+  'GAMBIA': 'Gambie', 'GHANA': 'Ghana', 'GREECE': 'Grèce', 'GUINEA': 'Guinée',
+  'GUINEA-BISSAU': 'Guinée-Bissau', 'EQUATORIAL GUINEA': 'Guinée équatoriale', 'HAITI': 'Haïti',
+  'HUNGARY': 'Hongrie', 'INDIA': 'Inde', 'INDONESIA': 'Indonésie', 'IRAN': 'Iran',
+  'IRAQ': 'Iraq', 'IRELAND': 'Irlande', 'ICELAND': 'Islande', 'ISRAEL': 'Israël',
+  'ITALY': 'Italie', 'JAPAN': 'Japon', 'JORDAN': 'Jordanie', 'KENYA': 'Kenya',
+  'KUWAIT': 'Koweït', 'LAOS': 'Laos', 'LESOTHO': 'Lesotho', 'LATVIA': 'Lettonie',
+  'LEBANON': 'Liban', 'LIBERIA': 'Liberia', 'LIBYA': 'Libye', 'LIECHTENSTEIN': 'Liechtenstein',
+  'LITHUANIA': 'Lituanie', 'LUXEMBOURG': 'Luxembourg', 'MADAGASCAR': 'Madagascar',
+  'MALAYSIA': 'Malaisie', 'MALAWI': 'Malawi', 'MALI': 'Mali', 'MALTA': 'Malte',
+  'MOROCCO': 'Maroc', 'MAURITIUS': 'Maurice', 'MAURITANIA': 'Mauritanie', 'MEXICO': 'Mexique',
+  'MONACO': 'Monaco', 'MONGOLIA': 'Mongolie', 'MONTENEGRO': 'Monténégro', 'MOZAMBIQUE': 'Mozambique',
+  'NAMIBIA': 'Namibie', 'NEPAL': 'Népal', 'NICARAGUA': 'Nicaragua', 'NIGER': 'Niger',
+  'NIGERIA': 'Nigeria', 'NORWAY': 'Norvège', 'NEW ZEALAND': 'Nouvelle-Zélande', 'UGANDA': 'Ouganda',
+  'UZBEKISTAN': 'Ouzbékistan', 'PAKISTAN': 'Pakistan', 'PANAMA': 'Panama', 'PARAGUAY': 'Paraguay',
+  'NETHERLANDS': 'Pays-Bas', 'PERU': 'Pérou', 'PHILIPPINES': 'Philippines', 'POLAND': 'Pologne',
+  'PORTUGAL': 'Portugal', 'QATAR': 'Qatar', 'CENTRAL AFRICAN REPUBLIC': 'République centrafricaine',
+  'DEMOCRATIC REPUBLIC OF THE CONGO': 'République démocratique du Congo',
+  'CONGO': 'République du Congo', 'ROMANIA': 'Roumanie', 'UNITED KINGDOM': 'Royaume-Uni',
+  'RUSSIA': 'Russie', 'RWANDA': 'Rwanda', 'SENEGAL': 'Sénégal', 'SERBIA': 'Serbie',
+  'SEYCHELLES': 'Seychelles', 'SIERRA LEONE': 'Sierra Leone', 'SINGAPORE': 'Singapour',
+  'SLOVAKIA': 'Slovaquie', 'SLOVENIA': 'Slovénie', 'SOMALIA': 'Somalie', 'SUDAN': 'Soudan',
+  'SOUTH SUDAN': 'Soudan du Sud', 'SRI LANKA': 'Sri Lanka', 'SWEDEN': 'Suède',
+  'SWITZERLAND': 'Suisse', 'SURINAME': 'Suriname', 'SYRIA': 'Syrie', 'TAJIKISTAN': 'Tadjikistan',
+  'TANZANIA': 'Tanzanie', 'CHAD': 'Tchad', 'CZECH REPUBLIC': 'République tchèque',
+  'THAILAND': 'Thaïlande', 'TOGO': 'Togo', 'TUNISIA': 'Tunisie', 'TURKMENISTAN': 'Turkménistan',
+  'TURKEY': 'Turquie', 'UKRAINE': 'Ukraine', 'URUGUAY': 'Uruguay', 'VATICAN': 'Vatican',
+  'VENEZUELA': 'Venezuela', 'VIETNAM': 'Viêt Nam', 'YEMEN': 'Yémen', 'ZAMBIA': 'Zambie',
+  'ZIMBABWE': 'Zimbabwe',
+};
+
+var demonymToCountry = {
+  'Afghane':'Afghanistan','Sud-africaine':'Afrique du Sud','Albanaise':'Albanie',
+  'Algérienne':'Algérie','Allemande':'Allemagne','Américaine':'États-Unis',
+  'Angolaise':'Angola','Argentine':'Argentine','Australienne':'Australie',
+  'Autrichienne':'Autriche','Belge':'Belgique','Béninoise':'Bénin',
+  'Bolivienne':'Bolivie','Bosnienne':'Bosnie','Botswanaise':'Botswana',
+  'Brésilienne':'Brésil','Britannique':'Royaume-Uni','Bulgare':'Bulgarie',
+  'Burkinabè':'Burkina Faso','Burundaise':'Burundi','Cambodgienne':'Cambodge',
+  'Camerounaise':'Cameroun','Canadienne':'Canada','Cap-verdienne':'Cap-Vert',
+  'Centrafricaine':'République centrafricaine','Chilienne':'Chili',
+  'Chinoise':'Chine','Colombienne':'Colombie','Comorienne':'Comores',
+  'Congolaise':'République du Congo','Coréenne':'Corée du Sud',
+  'Costaricaine':'Costa Rica','Croate':'Croatie','Cubaine':'Cuba',
+  'Ivoirienne':"Côte d'Ivoire",'Danoise':'Danemark','Djiboutienne':'Djibouti',
+  'Égyptienne':'Égypte','Émiratie':'Émirats arabes unis',
+  'Équatorienne':'Équateur','Espagnole':'Espagne','Estonienne':'Estonie',
+  'Éthiopienne':'Éthiopie','Finlandaise':'Finlande','Française':'France',
+  'Gabonaise':'Gabon','Gambienne':'Gambie','Ghanéenne':'Ghana',
+  'Grecque':'Grèce','Guinéenne':'Guinée','Haïtienne':'Haïti',
+  'Hondurienne':'Honduras','Hongroise':'Hongrie','Indienne':'Inde',
+  'Indonésienne':'Indonésie','Irakienne':'Irak','Iranienne':'Iran',
+  'Irlandaise':'Irlande','Islandaise':'Islande','Israélienne':'Israël',
+  'Italienne':'Italie','Jamaïcaine':'Jamaïque','Japonaise':'Japon',
+  'Jordanienne':'Jordanie','Kényane':'Kenya','Koweïtienne':'Koweït',
+  'Laotienne':'Laos','Lettonie':'Lettonie','Libanaise':'Liban',
+  'Libérienne':'Liberia','Libyenne':'Libye','Lituanienne':'Lituanie',
+  'Luxembourgeoise':'Luxembourg','Malgache':'Madagascar','Malaisienne':'Malaisie',
+  'Malawienne':'Malawi','Malienne':'Mali','Maltaise':'Malte',
+  'Marocaine':'Maroc','Mauricienne':'Maurice','Mauritanienne':'Mauritanie',
+  'Mexicaine':'Mexique','Moldave':'Moldavie','Monégasque':'Monaco',
+  'Mongole':'Mongolie','Monténégrine':'Monténégro','Mozambicaine':'Mozambique',
+  'Namibienne':'Namibie','Népalaise':'Népal','Nicaraguayenne':'Nicaragua',
+  'Nigérienne':'Niger','Nigériane':'Nigeria','Norvégienne':'Norvège',
+  'Néo-zélandaise':'Nouvelle-Zélande','Ougandaise':'Ouganda',
+  'Ouzbèke':'Ouzbékistan','Pakistanaise':'Pakistan','Panaméenne':'Panama',
+  'Paraguayenne':'Paraguay','Néerlandaise':'Pays-Bas','Péruvienne':'Pérou',
+  'Philippine':'Philippines','Polonaise':'Pologne','Portugaise':'Portugal',
+  'Qatarie':'Qatar','Roumaine':'Roumanie','Russe':'Russie',
+  'Rwandaise':'Rwanda','Sénégalaise':'Sénégal','Serbe':'Serbie',
+  'Seychelloise':'Seychelles','Sierra-léonaise':'Sierra Leone',
+  'Singapourienne':'Singapour','Slovaque':'Slovaquie','Slovène':'Slovénie',
+  'Somalienne':'Somalie','Soudanaise':'Soudan','Sri-lankaise':'Sri Lanka',
+  'Suédoise':'Suède','Suisse':'Suisse','Syrienne':'Syrie',
+  'Tadjike':'Tadjikistan','Tanzanienne':'Tanzanie','Tchadienne':'Tchad',
+  'Tchèque':'République tchèque','Thaïlandaise':'Thaïlande','Togolaise':'Togo',
+  'Tunisienne':'Tunisie','Turkmène':'Turkménistan','Turque':'Turquie',
+  'Ukrainienne':'Ukraine','Uruguayenne':'Uruguay','Vaticane':'Vatican',
+  'Vénézuélienne':'Venezuela','Vietnamienne':'Viêt Nam','Yéménite':'Yémen',
+  'Zambienne':'Zambie','Zimbabwéenne':'Zimbabwe',
+};
+
+window.previewFile = function(input, imgId, iconId) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var preview = document.getElementById(imgId);
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    if (iconId) {
+      var icon = document.getElementById(iconId);
+      if (icon) icon.style.display = 'none';
+    }
+    if (imgId === 'rectoPreview' || imgId === 'versoPreview') {
+      scanDocument(e.target.result, imgId);
+    }
+  };
+  reader.readAsDataURL(input.files[0]);
+};
+
+window.updatePreview = function(imgId, iconId, dataUrl) {
+  var img = document.getElementById(imgId);
+  if (img) { img.src = dataUrl; img.style.display = 'block'; }
+  var icon = document.getElementById(iconId);
+  if (icon) icon.style.display = 'none';
+};
+
+function _normApiStr(s) {
+  return s.toUpperCase().replace(/[\u2018\u2019\u02BC\u201A\u2039\u203A`´]/g, "'");
+}
+window.setFieldValue = function(name, value) {
+  var el = document.querySelector('[name="' + name + '"]');
+  if (!el || el.value) return;
+  if (el.tagName === 'SELECT') {
+    var norm = _normApiStr(value);
+    for (var i = 0; i < el.options.length; i++) {
+      if (_normApiStr(el.options[i].value) === norm) {
+        el.value = el.options[i].value;
+        return;
+      }
+    }
+  }
+  el.value = value;
+};
+
+window.formatRegulaDate = function(value) {
+  if (!value) return '';
+  var m = value.match(/^(\d{2})[.\-\\/](\d{2})[.\-\\/](\d{4})$/);
+  if (m) return m[3] + '-' + m[2] + '-' + m[1];
+  return value.substring(0, 10);
+};
+
+function mapDocType(code) {
+  var c = code.toUpperCase();
+  if (c === 'P' || c === 'PASSPORT' || c.indexOf('PASSPORT') >= 0) return 'PASSEPORT';
+  if (c === 'I' || c === 'ID' || c === 'CNI' || c.indexOf('IDENTITY') >= 0 || c.indexOf('NATIONAL') >= 0) return 'CNI';
+  if (c === 'D' || c.indexOf('DRIVER') >= 0 || c.indexOf('PERMIS') >= 0 || c.indexOf('LICENSE') >= 0) return 'PERMIS';
+  return 'AUTRE';
+}
+
+window.detectDocType = function(fieldList, result) {
+  var get = function(name) {
+    var f = fieldList.find(function(x) { return x.fieldName === name; });
+    return f && f.value != null ? String(f.value) : '';
+  };
+  var docClass = get('Document Class Code') || get('DocumentType') || get('Type');
+  if (docClass) return mapDocType(docClass);
+  try {
+    var docInfo = result.documentType ? result.documentType() : null;
+    if (docInfo && docInfo.documentName) return mapDocType(docInfo.documentName);
+  } catch(e) {}
+  var rawName = (result.rawResponse && result.rawResponse.documentType && result.rawResponse.documentType.oneCandidate && result.rawResponse.documentType.oneCandidate.documentName) ||
+                (result.rawResponse && result.rawResponse.documentType && result.rawResponse.documentType.result && result.rawResponse.documentType.result.documentType && result.rawResponse.documentType.result.documentType.documentName) || '';
+  if (rawName) return mapDocType(rawName);
+  return '';
+};
+
+window.findNationality = function(fieldList) {
+  var get = function(name) {
+    var f = fieldList.find(function(x) { return x.fieldName === name; });
+    return f && f.value != null ? String(f.value).trim() : '';
+  };
+  var val = get('Nationality');
+  if (val) return countryToDemonym[_normApiStr(val)] || val;
+  val = get('Nationality Code');
+  if (val) return isoToDemonym[_normApiStr(val)] || val;
+  val = get('Issuing State Name');
+  if (val) return countryToDemonym[_normApiStr(val)] || val;
+  return '';
+};
+
+window.findIssuingState = function(fieldList) {
+  var names = ['Issuing State Name', 'Issuing State', 'Country of Issue', 'ISSUING_STATE_NAME'];
+  for (var i = 0; i < names.length; i++) {
+    var f = fieldList.find(function(x) { return x.fieldName === names[i]; });
+    if (f && f.value != null) return String(f.value);
+  }
+  return '';
+};
+
+function scanDocument(dataUrl, sourceImgId) {
+  var base64 = dataUrl.split(',')[1];
+  if (!base64) return;
+  var modal = document.getElementById('scanModal');
+  var spinner = document.getElementById('scanSpinner');
+  var success = document.getElementById('scanSuccess');
+  var errorIcon = document.getElementById('scanError');
+  var msg = document.getElementById('scanModalMsg');
+  var sub = document.getElementById('scanModalSub');
+  var footer = document.getElementById('scanModalFooter');
+  spinner.style.display = 'block';
+  success.style.display = 'none';
+  errorIcon.style.display = 'none';
+  footer.style.display = 'none';
+  msg.textContent = 'Analyse du document en cours...';
+  sub.textContent = 'Veuillez patienter pendant l\'analyse du document d\'identité.';
+  sub.style.color = '#64748b';
+  modal.style.display = 'flex';
+  regulaApi.process({images: [base64], processParam: {scenario: Scenario.FULL_PROCESS}}).then(function(result) {
+    if (result.error) throw new Error(result.error.message || JSON.stringify(result.error));
+    spinner.style.display = 'none';
+    success.style.display = 'flex';
+    msg.textContent = 'Document analysé avec succès';
+    sub.textContent = 'Les champs ont été automatiquement remplis.';
+    sub.style.color = '#059669';
+    setTimeout(function() { closeScanModal(); }, 1500);
+    if (!result.text || !result.text.fieldList) return;
+    var get = function(name) {
+      var f = result.text.fieldList.find(function(x) { return x.fieldName === name; });
+      return f && f.value != null ? String(f.value) : '';
+    };
+    var fill = function(v, setter) { if (v) setter(v); };
+    fill(get('Surname') || get('SURNAME') || get('LastName') || get('LAST_NAME'), function(v) { setFieldValue('v_nom', v); });
+    fill(get('Given Names') || get('GIVEN_NAMES') || get('FirstName') || get('FIRST_NAME'), function(v) { setFieldValue('v_prenom', v); });
+    fill(get('Document Number') || get('DOCUMENT_NUMBER'), function(v) { setFieldValue('v_numero_piece', v); });
+    fill(formatRegulaDate(get('Date of Birth') || get('DATE_OF_BIRTH')), function(v) { setFieldValue('v_date_naissance', v); });
+    fill(get('Place of Birth') || get('PLACE_OF_BIRTH'), function(v) { setFieldValue('v_lieu_naissance', v); });
+    fill(get('Profession') || get('PROFESSION'), function(v) { setFieldValue('v_profession', v); });
+    fill(formatRegulaDate(get('Date of Issue') || get('DATE_OF_ISSUE')), function(v) { setFieldValue('v_date_delivrance', v); });
+    fill(formatRegulaDate(get('Date of Expiry') || get('DATE_OF_EXPIRY') || get('Date of Expiration') || get('EXPIRATION_DATE') || get('Expiry Date') || get('Expiration Date') || get('Document Expiry Date')), function(v) { setFieldValue('date_expiration', v); });
+    fill(get('Personal Number') || get('PERSONAL_NUMBER'), function(v) { setFieldValue('v_nip', v); });
+    var sexe = get('Sex') || get('SEX');
+    if (sexe) setFieldValue('v_genre', ['M','MALE','HOMME','H'].includes(sexe.toUpperCase().trim()) ? 'Homme' : 'Femme');
+    var typeDoc = detectDocType(result.text.fieldList, result);
+    if (typeDoc) setFieldValue('v_piece_identite', typeDoc);
+    var nat = findNationality(result.text.fieldList);
+    if (nat) setFieldValue('v_nationalite', nat);
+    var pays = findIssuingState(result.text.fieldList);
+    var paysMap = pays ? issuingStateToFrenchMap[_normApiStr(pays)] : null;
+    if (paysMap) {
+      setFieldValue('v_pays_delivrance', paysMap);
+    } else if (nat) {
+      var inferred = demonymToCountry[nat];
+      if (inferred) setFieldValue('v_pays_delivrance', inferred);
+    }
+    if (result.images && result.images.fieldList) {
+      for (var i = 0; i < result.images.fieldList.length; i++) {
+        var img = result.images.fieldList[i];
+        if (!img.valueList || !img.valueList.length) continue;
+        var dataUrl2 = 'data:image/jpeg;base64,' + img.valueList[0].value;
+        if (img.fieldType === GraphicFieldType.PORTRAIT) { updatePreview('photoPreview', 'photoIcon', dataUrl2); document.getElementById('photoPortraitData').value = dataUrl2; }
+        if (img.fieldType === GraphicFieldType.DOCUMENT_FRONT && sourceImgId === 'rectoPreview') updatePreview('rectoPreview', 'rectoIcon', dataUrl2);
+        if (img.fieldType === GraphicFieldType.DOCUMENT_REAR && sourceImgId === 'versoPreview') updatePreview('versoPreview', 'versoIcon', dataUrl2);
+      }
+    }
+  }).catch(function(err) {
+    spinner.style.display = 'none';
+    errorIcon.style.display = 'flex';
+    msg.textContent = 'Erreur d\'analyse';
+    sub.textContent = err.message || err || 'L\'analyse du document a échoué. Veuillez réessayer.';
+    sub.style.color = '#dc2626';
+    footer.style.display = 'flex';
+    console.error('Regula scan error:', err);
+  });
+}
+
+function closeScanModal() {
+  document.getElementById('scanModal').style.display = 'none';
+}
+
+</script>
+{% endblock %}

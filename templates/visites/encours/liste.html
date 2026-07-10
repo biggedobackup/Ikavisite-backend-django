@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Visites en cours - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.vec>*+*{margin-top:1.5rem}
+.vec-header{display:flex;flex-direction:column;gap:1.25rem}
+@media(min-width:1024px){.vec-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.vec-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.vec-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.vec-btn svg{width:1rem;height:1rem}
+.vec-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.vec-btn-secondary:hover{background:var(--secondary-light)}
+.vec-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.vec-btn-outline:hover{background:var(--primary-light)}
+.vec-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+@media(min-width:1024px){.vec-filters{grid-template-columns:1fr 160px 200px 200px auto}}
+.vec-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.vec-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vec-input::placeholder{color:#94a3b8;font-weight:500}
+.vec-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.vec-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.vec-table thead{background:var(--primary-light)}
+.vec-table thead th{text-align:left;padding:1rem 1.25rem;font-weight:900;color:var(--primary);white-space:nowrap}
+.vec-table thead th:last-child{text-align:right}
+.vec-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.vec-table tbody tr:hover{background:#f8fafc}
+.vec-table tbody tr:last-child{border-bottom:none}
+.vec-table tbody td{padding:1rem 1.25rem;color:#475569;vertical-align:middle}
+.vec-nom{font-weight:900;color:#0f172a;white-space:nowrap}
+.vec-action-group{display:flex;justify-content:flex-end;gap:.375rem}
+.vec-action-btn{display:inline-flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:.5rem;border:1px solid #e2e8f0;color:#64748b;background:#fff;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-decoration:none}
+.vec-action-btn:hover{background:#f1f5f9}
+.vec-action-btn svg{width:1rem;height:1rem}
+.vec-empty{text-align:center;padding:3rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8}
+.vec-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.vec-pagination-info{font-size:.8125rem;font-weight:600;color:#64748b}
+.vec-pagination-steps{display:flex;align-items:center;gap:.25rem}
+.vec-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.vec-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.vec-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.vv-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+.vv-overlay.open{display:flex}
+.vv-modal{background:#fff;border-radius:1rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);padding:1.5rem}
+.vv-modal h2{font-size:1.25rem;font-weight:900;color:#0f172a;margin:0 0 .25rem}
+.vv-modal p{font-size:.875rem;color:#64748b;margin:0 0 1.25rem}
+.vv-modal label{display:block;font-size:.8125rem;font-weight:900;color:#0f172a;margin-bottom:.375rem}
+.vv-modal select,.vv-modal textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s;font-family:inherit}
+.vv-modal select:focus,.vv-modal textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.vv-modal textarea{min-height:80px;resize:vertical}
+.vv-signature-wrap{border:2px dashed #e2e8f0;border-radius:.75rem;overflow:hidden;position:relative;background:#fafafa}
+.vv-signature-wrap canvas{display:block;width:100%;height:120px;cursor:crosshair;touch-action:none}
+.vv-signature-clear{position:absolute;top:.5rem;right:.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:.25rem .625rem;font-size:.6875rem;font-weight:700;color:#64748b;cursor:pointer}
+.vv-signature-clear:hover{background:#f1f5f9}
+.vv-modal-actions{display:flex;gap:.75rem;margin-top:1.5rem}
+.vv-modal-actions button{flex:1;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;transition:background .15s}
+.vv-modal-cancel{background:#f1f5f9;color:#475569}
+.vv-modal-cancel:hover{background:#e2e8f0}
+.vv-modal-confirm{background:var(--primary);color:#fff}
+.vv-modal-confirm:hover{background:var(--primary-hover)}
+.vec-btn-filter{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;background:var(--primary);color:#fff;transition:background .15s,box-shadow .15s;white-space:nowrap}.vec-btn-filter:hover{background:var(--primary-hover);box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vec">
+  <div class="vec-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Visites</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Visites en cours</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Liste des visites actuellement en cours.</p>
+    </div>
+    <div class="vec-actions">
+      <a href="{% url 'export_pdf_visites_encours' %}" class="vec-btn vec-btn-secondary" target="_blank">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 7H5a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </a>
+      <a href="{% url 'export_excel_visites_encours' %}" class="vec-btn vec-btn-outline">Export Excel</a>
+    </div>
+  </div>
+
+  <form class="vec-filters" method="GET" action="{% url 'liste_visites_encours' %}">
+    <input class="vec-input" type="search" name="q" placeholder="Filtrer par visiteur, motif..." value="{{ query }}" />
+    <select class="vec-input" name="genre" onchange="this.form.submit()">
+      <option value="">Tous les genres</option>
+      <option value="Homme" {% if genre_filter == 'Homme' %}selected{% endif %}>Homme</option>
+      <option value="Femme" {% if genre_filter == 'Femme' %}selected{% endif %}>Femme</option>
+    </select>
+    <select class="vec-input" name="departement" onchange="this.form.submit()">
+      <option value="">Tous les departements</option>
+      {% for d in departements %}
+      <option value="{{ d.id }}" {% if departement_filter|stringformat:'s' == d.id|stringformat:'s' %}selected{% endif %}>{{ d.nom }}</option>
+      {% endfor %}
+    </select>
+    <select class="vec-input" name="type_visite" onchange="this.form.submit()">
+      <option value="">Tous les types</option>
+      {% for t in types_visite %}
+      <option value="{{ t.id }}" {% if type_visite_filter|stringformat:'s' == t.id|stringformat:'s' %}selected{% endif %}>{{ t.nom }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="vec-btn-filter">Filtrer</button>
+  </form>
+
+  <div class="vec-table-wrap">
+    {% if page_obj %}
+    <table class="vec-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Visiteur</th>
+          <th>Type</th>
+          <th>Porte</th>
+          <th>Date visite</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td style="font-weight:900;color:var(--primary)">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div style="display:flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:9999px;background:var(--primary-light);font-size:.6875rem;font-weight:900;color:var(--primary);flex-shrink:0">{{ item.visiteur.prenom|first|upper }}{{ item.visiteur.nom|first|upper }}</div>
+              <div class="vec-nom">{{ item.visiteur.nom }} {{ item.visiteur.prenom }}</div>
+            </div>
+          </td>
+          <td>{{ item.type_visite.nom }}</td>
+          <td>{{ item.porte_entree.titre }}</td>
+          <td style="white-space:nowrap">{{ item.date_visite|date:'d/m/Y' }}</td>
+          <td>
+            <div class="vec-action-group">
+              <a href="{% url 'detail_visite_encours' item.pk %}" class="vec-action-btn" title="Détail">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              {% if perms.visites.change_visite %}<a href="{% url 'modifier_visite' item.pk %}" class="vec-action-btn" title="Modifier">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>{% endif %}
+              <button type="button" class="vec-action-btn" title="Sortie" onclick="openTerminerModal('{{ item.pk }}','{{ item.visiteur.nom|escapejs }} {{ item.visiteur.prenom|escapejs }}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+              </button>
+              <form method="post" action="{% url 'supprimer_visite' item.pk %}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer la visite de &quot;{{ item.visiteur.nom|escapejs }} {{ item.visiteur.prenom|escapejs }}&quot; ?')" style="display:inline">
+                {% csrf_token %}
+                {% if perms.visites.delete_visite %}<button type="submit" class="vec-action-btn" title="Supprimer">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+                </button>{% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="vec-pagination">
+      <span class="vec-pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ page_obj.paginator.count }} visite(s)</span>
+      <div class="vec-pagination-steps">
+        {% if page_obj.has_previous %}
+          <a href="?{{ filter_params }}page=1" class="vec-page-btn">&laquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.previous_page_number }}" class="vec-page-btn">&lsaquo;</a>
+        {% endif %}
+        {% for num in page_links %}
+          {% if num == page_obj.paginator.ELLIPSIS %}
+            <span class="vec-page-btn" style="border:none;cursor:default">&hellip;</span>
+          {% elif num == page_obj.number %}
+            <span class="vec-page-btn active">{{ num }}</span>
+          {% else %}
+            <a href="?{{ filter_params }}page={{ num }}" class="vec-page-btn">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{{ filter_params }}page={{ page_obj.next_page_number }}" class="vec-page-btn">&rsaquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.paginator.num_pages }}" class="vec-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="vec-empty">Aucune visite en cours.</div>
+    {% endif %}
+  </div>
+</div>
+{% include "visites/partials/terminer_modal.html" %}
+{% endblock %}

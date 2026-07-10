@@ -1,0 +1,36 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+{% block content %}
+<style>
+.ika-admin-stats{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.ika-admin-stat{flex:1;min-width:140px;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1rem 1.25rem;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ika-admin-stat-label{font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+.ika-admin-stat-value{font-size:1.75rem;font-weight:900;color:#0f172a;margin-top:.25rem;letter-spacing:-.025em}
+.ika-admin-stat.danger .ika-admin-stat-value{color:#e51b35}
+.ika-admin-stat.success .ika-admin-stat-value{color:#059669}
+.ika-admin-stat.primary .ika-admin-stat-value{color:#1270b8}
+</style>
+<div class="ika-admin-stats">
+  <div class="ika-admin-stat primary">
+    <div class="ika-admin-stat-label">Total visites</div>
+    <div class="ika-admin-stat-value">{{ stat_total }}</div>
+  </div>
+  <div class="ika-admin-stat success">
+    <div class="ika-admin-stat-label">En cours</div>
+    <div class="ika-admin-stat-value">{{ stat_en_cours }}</div>
+  </div>
+  <div class="ika-admin-stat success">
+    <div class="ika-admin-stat-label">Terminées</div>
+    <div class="ika-admin-stat-value">{{ stat_terminees }}</div>
+  </div>
+  <div class="ika-admin-stat danger">
+    <div class="ika-admin-stat-label">Excédées</div>
+    <div class="ika-admin-stat-value">{{ stat_excedees }}</div>
+  </div>
+  <div class="ika-admin-stat primary">
+    <div class="ika-admin-stat-label">Visiteurs</div>
+    <div class="ika-admin-stat-value">{{ stat_visiteurs }}</div>
+  </div>
+</div>
+{{ block.super }}
+{% endblock %}

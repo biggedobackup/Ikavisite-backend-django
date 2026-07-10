@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Modifier un département - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.depm>*+*{margin-top:1.5rem}
+.depm-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04);margin-top:2rem}
+@media(min-width:640px){.depm-card{padding:2rem}}
+.depm-grid{display:grid;gap:1.25rem}
+@media(min-width:640px){.depm-grid{grid-template-columns:1fr 1fr}}
+.depm-full{grid-column:1/-1}
+.depm-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.depm-required{color:var(--secondary)}
+.depm-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.depm-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.depm-textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;resize:vertical;min-height:6rem;transition:border-color .15s,box-shadow .15s}
+.depm-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.depm-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.depm-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.depm-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.depm-actions{flex-direction:row}}
+.depm-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.depm-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.depm-btn-primary:hover{background:var(--primary-hover)}
+.depm-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.depm-btn-ghost:hover{background:#f8fafc}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="depm">
+  <div>
+    <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Départements</p>
+    <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Modifier le département</h1>
+  </div>
+
+  <form class="depm-card" method="post" action="{% url 'modifier_departement' item.pk %}">
+    {% csrf_token %}
+    <div class="depm-grid">
+      <div>
+        <label class="depm-label">Nom du département <span class="depm-required">*</span></label>
+        <input class="depm-input" type="text" name="nom" value="{{ item.nom }}" required />
+      </div>
+      <div>
+        <label class="depm-label">Statut</label>
+        <select class="depm-select" name="statut">
+          <option value="ACTIF" {% if item.statut == 'ACTIF' %}selected{% endif %}>ACTIF</option>
+          <option value="INACTIF" {% if item.statut == 'INACTIF' %}selected{% endif %}>INACTIF</option>
+        </select>
+      </div>
+      <div class="depm-full">
+        <label class="depm-label">Description</label>
+        <textarea class="depm-textarea" name="description" rows="4">{{ item.description|default:'' }}</textarea>
+      </div>
+    </div>
+    <div class="depm-actions">
+      <a href="{% url 'liste_departements' %}" class="depm-btn depm-btn-ghost">Annuler</a>
+      <button type="submit" class="depm-btn depm-btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

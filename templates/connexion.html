@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connexion - IKAVISITE</title>
+<link rel="stylesheet" href="{% static 'connexion.css' %}">
+</head>
+<body>
+<div class="conteneur">
+  <div class="deco">
+    <div class="deco-1"></div>
+    <div class="deco-2"></div>
+    <div class="deco-3"></div>
+    <div class="deco-4"></div>
+  </div>
+
+  <div class="grille">
+    <div class="gauche">
+      <div class="logo-bar">
+        <div class="logo-icon"><img src="{% static 'logo.png' %}" alt="IKAVISITE"></div>
+        <div>
+          <p class="logo-text"><span class="ika">IKA</span><span class="visite">VISITE</span></p>
+          <p class="logo-sub">Contrôle d'accès & sécurité</p>
+        </div>
+      </div>
+
+      <div class="badge">
+        <span class="badge-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M9 12l2 2 4-4m5-4l-8-3-8 3v5c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6z"/></svg>
+        </span>
+        IKAVISITE - Pilotage des flux d'accès
+      </div>
+
+      <h1 class="titre">Optimisez la sécurité de votre entreprise avec <span class="ika">IKA</span><span class="visite">VISITE</span></h1>
+
+      <p class="sous-titre">Centralisez la gestion des entrées et sorties, suivez les mouvements en temps réel et sécurisez chaque accès grâce à une plateforme professionnelle conçue pour les entreprises exigeantes.</p>
+
+      <div class="cartes">
+        <div class="carte">
+          <div class="carte-icon bleu">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 19V9m5 10V5m5 14v-7m5 7V8M3 19h18"/></svg>
+          </div>
+          <h2 class="carte-titre bleu">Flux maîtrisés</h2>
+          <p class="carte-desc">Entrées et sorties suivies en temps réel.</p>
+        </div>
+        <div class="carte">
+          <div class="carte-icon rouge">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h2 class="carte-titre rouge">Traçabilité</h2>
+          <p class="carte-desc">Historique clair et consultable des accès.</p>
+        </div>
+        <div class="carte">
+          <div class="carte-icon bleu">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 3l8 3v6c0 4.4-2.7 8.4-8 9-5.3-.6-8-4.6-8-9V6l8-3zm-3 9l2 2 4-5"/></svg>
+          </div>
+          <h2 class="carte-titre bleu">Sécurité</h2>
+          <p class="carte-desc">Alertes en temps réel et listes noires.</p>
+        </div>
+      </div>
+
+      <div class="securite">
+        <span class="securite-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
+        </span>
+        Plateforme sécurisée et conforme aux meilleures pratiques
+      </div>
+    </div>
+
+    <div class="form-col">
+      <div class="logo-mobile">
+        <div class="logo-icon"><img src="{% static 'logo.png' %}" alt="IKAVISITE"></div>
+        <div>
+          <p class="logo-text"><span class="ika">IKA</span><span class="visite">VISITE</span></p>
+          <p class="logo-sub" style="letter-spacing:0.14em">Contrôle d'accès</p>
+        </div>
+      </div>
+
+      <form class="form-card" method="post" action="{% url 'connexion' %}">
+        {% csrf_token %}
+        <div class="form-head">
+          <div class="form-avatar"><img src="{% static 'logo.png' %}" alt="IKAVISITE"></div>
+          <h1 class="form-title">Connexion</h1>
+          <p class="form-sub">Connectez-vous pour superviser les flux d'entrée et de sortie.</p>
+        </div>
+
+        <div>
+          <label class="champ">
+            <span class="champ-label">Adresse email ou nom d'utilisateur</span>
+            <div class="champ-wrap">
+              <span class="champ-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12H8m12-5v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0a2 2 0 00-2-2H6a2 2 0 00-2 2m16 0l-8 6-8-6"/></svg>
+              </span>
+              <input class="champ-input" type="text" name="username" placeholder="admin@ikavisite.com" required autocomplete="username" autocapitalize="off" />
+            </div>
+          </label>
+
+          <label class="champ">
+            <span class="champ-label">Mot de passe</span>
+            <div class="champ-wrap">
+              <span class="champ-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4"/></svg>
+              </span>
+              <input class="champ-input champ-input--mdp" type="password" name="password" id="mdp-input" placeholder="8 caractères minimum" minlength="8" required autocomplete="current-password" />
+              <button type="button" class="eye-btn" onclick="toggleMdp()" tabindex="-1" aria-label="Afficher le mot de passe">
+                <svg id="eye-open" class="eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eye-closed" class="eye-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.6 10.6A3 3 0 0013.4 13.4M9.9 5.2A10.8 10.8 0 0112 5c6.5 0 10 7 10 7a18.8 18.8 0 01-3.1 4.1M6.1 6.5C3.5 8.2 2 12 2 12s3.5 7 10 7c1.5 0 2.9-.4 4.1-1"/></svg>
+              </button>
+            </div>
+            <span id="mdp-erreur" class="champ-erreur hidden">8 caractères minimum</span>
+          </label>
+
+          {% if messages %}
+            {% for message in messages %}
+              <div class="msg-erreur">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <div class="champ-actions">
+            <label class="champ-remember">
+              <input type="checkbox" name="remember" checked />
+              Se souvenir de moi
+            </label>
+            <button type="button" class="champ-forgot" onclick="openMdp()">Mot de passe oublié ?</button>
+          </div>
+
+          <button type="submit" class="btn-submit">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4"/></svg>
+            Se connecter
+          </button>
+        </div>
+
+        <div class="sep">
+          <span class="sep-line"></span>
+          <span class="sep-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 3v6c0 4.4-2.7 8.4-8 9-5.3-.6-8-4.6-8-9V6l8-3z"/></svg></span>
+          <span>Connexion sécurisée</span>
+          <span class="sep-line"></span>
+        </div>
+
+        <p class="foot">Vos identifiants sont personnels. Connectez-vous uniquement depuis un appareil de confiance et signalez toute activité inhabituelle.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="modal-mdp" class="modal-overlay hidden" onclick="closeMdp(event)">
+  <div class="modal">
+    <div class="modal-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+    </div>
+    <h2 class="modal-title">Réinitialisation du mot de passe</h2>
+    <p class="modal-desc">Pour protéger votre compte, contactez l'administrateur IKAVISITE de votre entreprise. Une procédure de réinitialisation sécurisée vous sera envoyée après vérification de votre identité.</p>
+    <div class="modal-support">
+      <strong>Support recommandé</strong>
+      <span>support@ikavisite.com</span>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn" onclick="closeMdp()">Fermer</button>
+      <a href="mailto:support@ikavisite.com" class="modal-btn-primary">Contacter le support</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function openMdp(){document.getElementById('modal-mdp').classList.remove('hidden')}
+function closeMdp(e){if(!e||e.target===document.getElementById('modal-mdp'))document.getElementById('modal-mdp').classList.add('hidden')}
+function toggleMdp(){var i=document.getElementById('mdp-input'),o=document.getElementById('eye-open'),c=document.getElementById('eye-closed');if(i.type==='password'){i.type='text';o.classList.add('hidden');c.classList.remove('hidden')}else{i.type='password';c.classList.add('hidden');o.classList.remove('hidden')}}
+document.getElementById('mdp-input')?.addEventListener('input',function(){var e=document.getElementById('mdp-erreur');if(this.value.length>0&&this.value.length<8){e.classList.remove('hidden')}else{e.classList.add('hidden')}})
+</script>
+</body>
+</html>

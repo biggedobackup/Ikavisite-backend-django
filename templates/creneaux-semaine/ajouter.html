@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ajouter un créneau - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.cra>*+*{margin-top:1.5rem}
+.cra-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04);margin-top:2rem}
+@media(min-width:640px){.cra-card{padding:2rem}}
+.cra-grid{display:grid;gap:1.25rem}
+@media(min-width:640px){.cra-grid{grid-template-columns:1fr 1fr}}
+.cra-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.cra-required{color:var(--secondary)}
+.cra-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.cra-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.cra-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.cra-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.cra-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.cra-actions{flex-direction:row}}
+.cra-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.cra-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.cra-btn-primary:hover{background:var(--primary-hover)}
+.cra-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.cra-btn-ghost:hover{background:#f8fafc}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cra">
+  <div>
+    <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Créneaux de semaine</p>
+    <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Ajouter un créneau</h1>
+  </div>
+
+  <form class="cra-card" method="post" action="{% url 'ajouter_creneau' %}">
+    {% csrf_token %}
+    <div class="cra-grid">
+      <div>
+        <label class="cra-label">Jour de la semaine <span class="cra-required">*</span></label>
+        <select class="cra-select" name="jour_semaine" required>
+          {% for j in jours %}
+          <option value="{{ j }}" {% if request.POST.jour_semaine == j %}selected{% endif %}>{{ j }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="cra-label">Statut</label>
+        <select class="cra-select" name="statut">
+          <option value="ACTIF" selected>ACTIF</option>
+          <option value="INACTIF">INACTIF</option>
+        </select>
+      </div>
+      <div>
+        <label class="cra-label">Heure de début <span class="cra-required">*</span></label>
+        <input class="cra-input" type="time" name="heure_debut" value="{{ request.POST.heure_debut|default:'08:00' }}" required />
+      </div>
+      <div>
+        <label class="cra-label">Heure de fin <span class="cra-required">*</span></label>
+        <input class="cra-input" type="time" name="heure_fin" value="{{ request.POST.heure_fin|default:'17:00' }}" required />
+      </div>
+    </div>
+    <div class="cra-actions">
+      <a href="{% url 'liste_creneaux' %}" class="cra-btn cra-btn-ghost">Annuler</a>
+      <button type="submit" class="cra-btn cra-btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

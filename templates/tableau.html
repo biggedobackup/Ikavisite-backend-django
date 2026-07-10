@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Tableau de bord - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.dboard-space>*+*{margin-top:1.25rem}
+.dboard-header{display:flex;flex-direction:column;gap:1rem}
+@media(min-width:1024px){.dboard-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.dboard-stats{display:grid;gap:1rem}
+@media(min-width:640px){.dboard-stats{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.dboard-stats{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1400px){.dboard-stats{grid-template-columns:repeat(4,1fr)}}
+.stat-card{display:block;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1.25rem;box-shadow:0 14px 35px rgba(15,23,42,.04);transition:transform .15s,box-shadow .15s,border-color .15s}
+.stat-card:hover{transform:translateY(-2px);border-color:rgba(18,112,184,.3);box-shadow:0 18px 40px rgba(0,59,143,.1)}
+.stat-card-inner{display:flex;align-items:center;gap:1rem}
+.stat-icon{width:3.5rem;height:3.5rem;border-radius:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stat-icon svg{width:1.75rem;height:1.75rem}
+.stat-icon.primary{background:#e8f3fc;color:var(--primary)}
+.stat-icon.purple{background:#f5f3ff;color:#7c3aed}
+.stat-icon.danger{background:var(--secondary-light);color:var(--secondary)}
+.stat-icon.success{background:#ecfdf5;color:#059669}
+.stat-label{font-size:.75rem;font-weight:700;color:#64748b}
+.stat-value{font-size:1.875rem;font-weight:900;color:#0f172a;letter-spacing:-.025em;margin-top:.125rem}
+.stat-trend{font-size:.6875rem;font-weight:700;margin-top:.25rem;display:flex;align-items:center;gap:.25rem}
+.stat-trend.up{color:#059669}
+.stat-trend.down{color:var(--secondary)}
+.stat-trend.neutral{color:#94a3b8}
+.chart-grid{display:grid;gap:1.25rem}
+@media(min-width:1280px){.chart-grid-3{grid-template-columns:repeat(3,1fr)}.chart-grid-2{grid-template-columns:1fr 0.95fr}}
+.chart-card{display:flex;flex-direction:column;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1.25rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.chart-title{font-size:1.125rem;font-weight:900;color:#0f172a}
+.chart-sub{font-size:.875rem;color:#64748b;margin-top:.25rem}
+.chart-bar-h{height:.75rem;border-radius:9999px;background:#f1f5f9;overflow:hidden}
+.chart-bar-h-fill{height:100%;border-radius:9999px;background:var(--primary);width:var(--tw-p)}
+.chart-bar-h-fill.secondary{background:var(--secondary)}
+.filter-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.75rem;padding:1rem;border-radius:.75rem;background:#f8fafc;border:1px solid #e2e8f0}
+.filter-group{display:flex;flex-direction:column;gap:.25rem}
+.filter-group label{font-size:.6875rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+.filter-group input,.filter-group select{padding:.5rem .75rem;border-radius:.5rem;border:1px solid #e2e8f0;font-size:.8125rem;font-weight:600;color:#0f172a;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+.filter-group input:focus,.filter-group select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(18,112,184,.15)}
+.filter-btn{padding:.5rem 1rem;border-radius:.5rem;font-size:.8125rem;font-weight:800;border:none;cursor:pointer;transition:background .15s,box-shadow .15s}
+@media(max-width:639px){.filter-bar{flex-direction:column}.filter-bar .filter-group{width:100%}.filter-bar .filter-group input,.filter-bar .filter-group select{width:100%}.filter-actions{display:flex;gap:.75rem;width:100%}.filter-actions .filter-btn{flex:1;text-align:center}.filter-bar .period-badge{align-self:flex-start}}
+.filter-btn.primary{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(18,112,184,.25)}
+.filter-btn.primary:hover{background:var(--primary-hover)}
+.filter-btn.ghost{background:#fff;color:#64748b;border:1px solid #e2e8f0}
+.filter-btn.ghost:hover{background:#f1f5f9;color:#334155}
+.period-badge{display:inline-flex;align-items:center;gap:.5rem;font-size:.75rem;font-weight:700;color:var(--primary);background:#e8f3fc;padding:.35rem .75rem;border-radius:9999px}
+.chart-bar-v-wrap{min-height:16rem;display:flex;align-items:flex-end;justify-content:space-between;gap:2px;border-bottom:1px solid #f1f5f9;padding:2rem .25rem 0;margin-top:.5rem}
+.chart-bar-v-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.375rem;min-width:0}
+.chart-bar-v{width:100%;max-width:2.5rem;border-radius:.5rem .5rem 0 0;background:var(--primary);box-shadow:0 4px 10px rgba(18,112,184,.2)}
+.chart-bar-v-value{font-size:.625rem;font-weight:900;color:#334155}
+.chart-bar-v-label{font-size:.75rem;font-weight:700;color:#64748b;padding-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center}
+.chart-link{margin-top:auto;padding-top:1.25rem;display:inline-flex;align-items:center;gap:.5rem;font-size:.875rem;font-weight:900;color:var(--primary);transition:color .15s}
+.chart-link:hover{color:var(--primary-hover)}
+.donut-wrap{display:grid;gap:1.5rem;align-items:center}
+@media(min-width:640px){.donut-wrap{grid-template-columns:220px 1fr}}
+.donut-ring{position:relative;margin:0 auto;width:11rem;height:11rem;border-radius:50%;overflow:hidden}
+.donut-inner{position:absolute;inset:2rem;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 2px 4px rgba(0,0,0,.06)}
+.donut-legend{display:grid;gap:.75rem}
+.donut-legend-item{display:grid;grid-template-columns:1rem 1fr 3rem;align-items:center;gap:.75rem;font-size:.875rem}
+.donut-dot{width:.75rem;height:.75rem;border-radius:50%}
+.donut-label{font-weight:700;color:#334155}
+.donut-value{text-align:right;font-weight:900;color:#0f172a}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dboard-space">
+  <div class="dboard-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Centre de supervision</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Tableau de bord</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Vue d'ensemble des statistiques clés</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end">
+      <a href="{% url 'ajouter_visite' %}" class="ika-nav-item" style="display:inline-flex;gap:.5rem;border-radius:.75rem;background:var(--primary);padding:.625rem 1.25rem;font-size:.875rem;font-weight:900;color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.25);text-decoration:none;border:none">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1rem;height:1rem"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 4v16m8-8H4"/></svg>
+        Nouvelle visite
+      </a>
+    </div>
+  </div>
+
+  <form class="filter-bar" method="GET" action="{% url 'tableau_de_bord' %}">
+    <div class="filter-group">
+      <label>Du</label>
+      <input type="date" name="start" value="{{ period_start }}">
+    </div>
+    <div class="filter-group">
+      <label>Au</label>
+      <input type="date" name="end" value="{{ period_end }}">
+    </div>
+    <div class="filter-group">
+      <label>Type de visite</label>
+      <select name="type">
+        <option value="">Tous</option>
+        {% for t in type_choices %}
+        <option value="{{ t.id }}" {% if selected_type == t.id|stringformat:"s" %}selected{% endif %}>{{ t.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="filter-btn primary">Appliquer</button>
+      <a href="{% url 'tableau_de_bord' %}" class="filter-btn ghost" style="display:inline-flex;align-items:center;text-decoration:none">Réinitialiser</a>
+    </div>
+    <span class="period-badge">{{ period_label }}</span>
+  </form>
+
+  {% if stats %}
+  <div class="dboard-stats">
+    {% for s in stats %}
+      <a href="{% if s.url_override %}{{ s.url_override }}{% else %}{% url s.url %}{% endif %}" class="stat-card" style="text-decoration:none;color:inherit">
+      <div class="stat-card-inner">
+        <span class="stat-icon {{ s.tone }}">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {% if s.icon == 'calendar' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            {% elif s.icon == 'today' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            {% elif s.icon == 'clock' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            {% elif s.icon == 'check' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            {% elif s.icon == 'check-circle' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            {% elif s.icon == 'users' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/>
+            {% elif s.icon == 'building' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m4-14h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"/>
+            {% elif s.icon == 'door' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+            {% elif s.icon == 'shield' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5 4l7-2 7 2v6c0 5-3.2 9.4-7 10-3.8-.6-7-5-7-10V4z"/>
+            {% elif s.icon == 'box' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            {% elif s.icon == 'alert' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            {% endif %}
+          </svg>
+        </span>
+        <div>
+          <p class="stat-label">{{ s.label }}</p>
+          <p class="stat-value">{{ s.value }}</p>
+          <p class="stat-trend neutral" style="margin-top:.125rem">&mdash; {{ s.sub }}</p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if stats or show_chart_departments or show_chart_weekday or show_chart_entry_points or show_chart_incidents or show_chart_visit_types %}
+  <div class="chart-grid chart-grid-3">
+    {% if show_chart_departments %}
+    <div class="chart-card">
+      <div style="margin-bottom:1.25rem">
+        <h2 class="chart-title">Visites par département</h2>
+        <p class="chart-sub">Répartition des passages enregistrés par service.</p>
+      </div>
+      <div style="display:grid;gap:1rem">
+        {% for d in visits_by_department %}
+        <div style="display:grid;grid-template-columns:90px 1fr 38px;align-items:center;gap:1rem">
+          <span style="font-size:.875rem;font-weight:900;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.label }}</span>
+          <div class="chart-bar-h"><div class="chart-bar-h-fill" style="width:{{ d.width }}%"></div></div>
+          <span style="font-size:.875rem;font-weight:900;color:#0f172a;text-align:right">{{ d.value }}</span>
+        </div>
+        {% empty %}
+        <p style="text-align:center;font-size:.875rem;color:#94a3b8;padding:2rem">Aucune donnée</p>
+        {% endfor %}
+      </div>
+      <a href="{% url 'liste_departements' %}" class="chart-link">Voir tous les départements <span>→</span></a>
+    </div>
+    {% endif %}
+
+    {% if show_chart_weekday %}
+    <div class="chart-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:1rem">
+        <div>
+          <h2 class="chart-title">Visites par jour</h2>
+          <p class="chart-sub">Activité du lundi au vendredi.</p>
+        </div>
+      </div>
+      <div class="chart-bar-v-wrap">
+        {% for d in visits_by_day %}
+        <div class="chart-bar-v-item">
+          <span class="chart-bar-v-value">{{ d.value }}</span>
+          {% if d.height > 0 %}
+          <div class="chart-bar-v" style="height:{{ d.height }}px"></div>
+          {% else %}
+          <div class="chart-bar-v" style="height:2px"></div>
+          {% endif %}
+          <span class="chart-bar-v-label">{{ d.day }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <a href="{% url 'liste_visites' %}" class="chart-link">Voir le rapport détaillé <span>→</span></a>
+    </div>
+    {% endif %}
+
+    {% if show_chart_entry_points %}
+    <div class="chart-card">
+      <div style="margin-bottom:1.25rem">
+        <h2 class="chart-title">Flux par point d'entrée</h2>
+        <p class="chart-sub">Répartition des visiteurs selon l'entrée utilisée.</p>
+      </div>
+      <div style="display:grid;gap:1rem">
+        {% for e in visits_by_entry_point %}
+        <div style="display:grid;gap:.5rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem">
+            <span style="font-size:.875rem;font-weight:900;color:#334155">{{ e.label }}</span>
+            <span style="font-size:.875rem;font-weight:900;color:var(--primary)">{{ e.value }}</span>
+          </div>
+          <div class="chart-bar-h"><div class="chart-bar-h-fill secondary" style="width:{{ e.width }}%"></div></div>
+        </div>
+        {% empty %}
+        <p style="text-align:center;font-size:.875rem;color:#94a3b8;padding:2rem">Aucune donnée</p>
+        {% endfor %}
+      </div>
+      <a href="{% url 'liste_portes_entree' %}" class="chart-link">Voir les points d'entrée <span>→</span></a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if show_chart_incidents or show_chart_visit_types %}
+  <div class="chart-grid chart-grid-2">
+    {% if show_chart_incidents %}
+    <div class="chart-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:1rem">
+        <div>
+          <h2 class="chart-title">Flux des incidents</h2>
+          <p class="chart-sub">Évolution du nombre d'incidents signalés</p>
+        </div>
+      </div>
+      {% if incidents_flow %}
+      <div class="chart-bar-v-wrap">
+        {% for inc in incidents_flow %}
+        <div class="chart-bar-v-item">
+          <span class="chart-bar-v-value">{{ inc.value }}</span>
+          {% if inc.height > 0 %}
+          <div class="chart-bar-v" style="height:{{ inc.height }}px;background:var(--secondary);box-shadow:0 4px 10px rgba(229,27,53,.2)"></div>
+          {% else %}
+          <div class="chart-bar-v" style="height:2px;background:var(--secondary)"></div>
+          {% endif %}
+          <span class="chart-bar-v-label">{{ inc.month }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="display:flex;align-items:center;justify-content:center;height:14rem;font-size:.875rem;font-weight:700;color:#94a3b8">Aucune donnée</div>
+      {% endif %}
+      <a href="{% url 'liste_incidents' %}" class="chart-link">Voir tous les incidents <span>→</span></a>
+    </div>
+    {% endif %}
+
+    {% if show_chart_visit_types %}
+    <div class="chart-card">
+      <h2 class="chart-title">Répartition des visites par type</h2>
+      <p class="chart-sub" style="margin-bottom:1.25rem">Pourcentage des visites par catégorie.</p>
+      <div class="donut-wrap">
+        {% if visit_types %}
+        <div class="donut-ring" style="background:conic-gradient({% for t in visit_types %}{{ t.color }} {{ t.value }}%{% if not forloop.last %}, {% endif %}{% endfor %})">
+          <div class="donut-inner">
+            <p style="font-size:1.5rem;font-weight:900;color:#0f172a">{{ total_visites_par_type }}</p>
+            <p style="font-size:.75rem;font-weight:700;color:#94a3b8">Total</p>
+          </div>
+        </div>
+        {% else %}
+        <div style="display:flex;align-items:center;justify-content:center;height:11rem;font-size:.875rem;font-weight:700;color:#94a3b8">Aucune donnée</div>
+        {% endif %}
+        <div class="donut-legend">
+          {% for t in visit_types %}
+          <div class="donut-legend-item">
+            <span class="donut-dot" style="background:{{ t.color }}"></span>
+            <span class="donut-label">{{ t.label }}</span>
+            <span class="donut-value">{{ t.value }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <a href="{% url 'liste_types_visite' %}" class="chart-link">Voir le détail <span>→</span></a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

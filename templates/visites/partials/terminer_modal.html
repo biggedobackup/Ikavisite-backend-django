@@ -1,0 +1,117 @@
+<div id="terminerModal" class="vv-overlay">
+  <div class="vv-modal">
+    <h2>Terminer la visite</h2>
+    <p id="terminerModalVisiteur">Êtes-vous sûr de vouloir terminer la visite de <strong></strong> ?</p>
+    <form id="terminerForm" method="post">
+      {% csrf_token %}
+      <div style="margin-bottom:1.25rem">
+        <label>Signature de sortie</label>
+        <div class="vv-signature-wrap">
+          <canvas id="signatureCanvas" width="940" height="120"></canvas>
+          <button type="button" class="vv-signature-clear" onclick="clearSignature()">Effacer</button>
+        </div>
+      </div>
+      <div style="margin-bottom:1.25rem">
+        <label for="incident_choice">Incident</label>
+        <select id="incident_choice" name="incident_choice" onchange="toggleIncidentDesc()">
+          <option value="NON">Non</option>
+          <option value="OUI">Oui</option>
+        </select>
+      </div>
+      <div id="incident_gravite_wrap" style="margin-bottom:1.25rem;display:none">
+        <label for="incident_gravite">Gravité de l'incident</label>
+        <select id="incident_gravite" name="incident_gravite">
+          <option value="FAIBLE">Faible</option>
+          <option value="MOYENNE" selected>Moyenne</option>
+          <option value="ELEVEE">Élevée</option>
+          <option value="CRITIQUE">Critique</option>
+        </select>
+      </div>
+      <div id="incident_desc_wrap" style="margin-bottom:1.25rem;display:none">
+        <label for="incident_description">Description de l'incident</label>
+        <textarea id="incident_description" name="incident_description" placeholder="Décrivez l'incident..."></textarea>
+      </div>
+      <div class="vv-modal-actions">
+        <button type="button" class="vv-modal-cancel" onclick="closeTerminerModal()">Annuler</button>
+        <button type="submit" class="vv-modal-confirm">Confirmer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+var sigPadInitialized = false;
+function initSignaturePad() {
+  var canvas = document.getElementById('signatureCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * (canvas.offsetHeight / rect.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  var drawing = false;
+  function getPos(e) {
+    var r = canvas.getBoundingClientRect();
+    var cx = e.touches ? e.touches[0].clientX : e.clientX;
+    var cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
+  }
+  canvas.onmousedown = function(e) { e.preventDefault(); drawing = true; var p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  canvas.onmousemove = function(e) { e.preventDefault(); if (!drawing) return; var p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+  canvas.onmouseup = function(e) { e.preventDefault(); drawing = false; };
+  canvas.onmouseleave = function(e) { e.preventDefault(); drawing = false; };
+  canvas.ontouchstart = function(e) { e.preventDefault(); drawing = true; var p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  canvas.ontouchmove = function(e) { e.preventDefault(); if (!drawing) return; var p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+  canvas.ontouchend = function(e) { e.preventDefault(); drawing = false; };
+  window.clearSignature = function() { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); };
+  window.getSignatureData = function() {
+    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var d = imageData.data;
+    for (var i = 0; i < d.length; i += 4) {
+      if (d[i] !== 255 || d[i+1] !== 255 || d[i+2] !== 255) return canvas.toDataURL('image/png');
+    }
+    return '';
+  };
+}
+window.openTerminerModal = function(pk, visiteur) {
+  document.getElementById('terminerForm').action = '/visites/terminer/' + pk + '/';
+  document.getElementById('terminerModal').classList.add('open');
+  if (!sigPadInitialized) { initSignaturePad(); sigPadInitialized = true; }
+  var strong = document.querySelector('#terminerModalVisiteur strong');
+  if (strong) strong.textContent = visiteur;
+  document.getElementById('incident_choice').value = 'NON';
+  document.getElementById('incident_gravite').value = 'MOYENNE';
+  document.getElementById('incident_description').value = '';
+  document.getElementById('incident_gravite_wrap').style.display = 'none';
+  document.getElementById('incident_desc_wrap').style.display = 'none';
+  if (window.clearSignature) window.clearSignature();
+};
+window.closeTerminerModal = function() {
+  document.getElementById('terminerModal').classList.remove('open');
+};
+window.toggleIncidentDesc = function() {
+  var choice = document.getElementById('incident_choice');
+  var graviteWrap = document.getElementById('incident_gravite_wrap');
+  var descWrap = document.getElementById('incident_desc_wrap');
+  var show = choice && choice.value === 'OUI';
+  if (graviteWrap) graviteWrap.style.display = show ? 'block' : 'none';
+  if (descWrap) descWrap.style.display = show ? 'block' : 'none';
+};
+var terminerForm = document.getElementById('terminerForm');
+if (terminerForm) {
+  terminerForm.addEventListener('submit', function(e) {
+    var sigData = window.getSignatureData ? window.getSignatureData() : '';
+    if (sigData) {
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'signature_sortie_data';
+      input.value = sigData;
+      this.appendChild(input);
+    }
+  });
+}
+</script>

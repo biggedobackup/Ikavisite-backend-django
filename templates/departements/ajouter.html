@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ajouter un département - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.depa>*+*{margin-top:1.5rem}
+.depa-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04);margin-top:2rem}
+@media(min-width:640px){.depa-card{padding:2rem}}
+.depa-grid{display:grid;gap:1.25rem}
+@media(min-width:640px){.depa-grid{grid-template-columns:1fr 1fr}}
+.depa-full{grid-column:1/-1}
+.depa-label{font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem}
+.depa-required{color:var(--secondary)}
+.depa-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.depa-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.depa-input::placeholder{color:#94a3b8;font-weight:500}
+.depa-textarea{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;resize:vertical;min-height:6rem;transition:border-color .15s,box-shadow .15s}
+.depa-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.depa-actions{display:flex;flex-direction:column;gap:.75rem;justify-content:flex-end;margin-top:2rem}
+@media(min-width:640px){.depa-actions{flex-direction:row}}
+.depa-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.depa-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.depa-btn-primary:hover{background:var(--primary-hover)}
+.depa-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.depa-btn-ghost:hover{background:#f8fafc}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="depa">
+  <div>
+    <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Départements</p>
+    <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Ajouter un département</h1>
+  </div>
+
+  <form class="depa-card" method="post" action="{% url 'ajouter_departement' %}">
+    {% csrf_token %}
+    <div class="depa-grid">
+      <div>
+        <label class="depa-label">Nom du département <span class="depa-required">*</span></label>
+        <input class="depa-input" type="text" name="nom" placeholder="Direction générale" value="{{ request.POST.nom|default:'' }}" required />
+      </div>
+      <div>
+        <label class="depa-label">Statut</label>
+        <select class="depa-input" name="statut">
+          <option value="ACTIF" selected>ACTIF</option>
+          <option value="INACTIF">INACTIF</option>
+        </select>
+      </div>
+      <div class="depa-full">
+        <label class="depa-label">Description</label>
+        <textarea class="depa-textarea" name="description" rows="4" placeholder="Description du département">{{ request.POST.description|default:'' }}</textarea>
+      </div>
+    </div>
+    <div class="depa-actions">
+      <a href="{% url 'liste_departements' %}" class="depa-btn depa-btn-ghost">Annuler</a>
+      <button type="submit" class="depa-btn depa-btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

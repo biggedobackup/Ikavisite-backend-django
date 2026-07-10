@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Détail incident - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.id>*+*{margin-top:1.5rem}
+.id-header{display:flex;flex-direction:column;gap:1rem}
+@media(min-width:640px){.id-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.id-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.id-btn svg{width:1.125rem;height:1.125rem}
+.id-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.id-btn-ghost:hover{background:#f8fafc}
+.id-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.id-btn-primary:hover{background:var(--primary-hover)}
+.id-btn-danger{background:var(--secondary);color:#fff}
+.id-btn-danger:hover{background:var(--secondary-hover)}
+.id-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+@media(min-width:640px){.id-card{padding:2rem}}
+.id-section-title{font-size:1.125rem;font-weight:900;color:#0f172a;border-bottom:1px solid #f1f5f9;padding-bottom:.75rem}
+.id-grid{display:grid;gap:1.25rem;margin-top:1.25rem}
+@media(min-width:640px){.id-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:1024px){.id-grid-3{grid-template-columns:1fr 1fr 1fr}}
+.id-field{border-radius:1rem;background:#f8fafc;padding:1rem}
+.id-field-label{font-size:.8125rem;font-weight:700;color:#64748b}
+.id-field-value{margin-top:.5rem;font-weight:900;color:#0f172a;word-break:break-word}
+.id-field-full{grid-column:1/-1}
+.id-badge{display:inline-flex;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.id-badge-OUVERT{background:#fee2e2;color:#dc2626}
+.id-badge-EN_COURS{background:#dbeafe;color:#1d4ed8}
+.id-badge-RESOLU{background:#dcfce7;color:#15803d}
+.id-badge-FERME{background:#f3f4f6;color:#6b7280}
+.id-badge-FAIBLE{background:#fef3c7;color:#d97706}
+.id-badge-MOYENNE{background:#fef3c7;color:#d97706}
+.id-badge-ELEVEE{background:#fee2e2;color:#dc2626}
+.id-badge-CRITIQUE{background:#fecaca;color:#991b1b}
+.id-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #f1f5f9}
+</style>
+{% endblock %}
+{% block content %}
+<div class="id">
+  <div class="id-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Incidents</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Détail de l'incident</h1>
+    </div>
+    <a href="{% url 'liste_incidents' %}" class="id-btn id-btn-ghost">Retour</a>
+  </div>
+
+  <section class="id-card">
+    <h2 class="id-section-title">Incident</h2>
+    <div class="id-grid id-grid-3">
+      <div class="id-field"><div class="id-field-label">ID</div><div class="id-field-value">{{ item.pk }}</div></div>
+      <div class="id-field"><div class="id-field-label">UUID</div><div class="id-field-value" style="word-break:break-all">{{ item.uuid }}</div></div>
+      <div class="id-field"><div class="id-field-label">Type d'incident</div><div class="id-field-value" style="font-size:1rem">{{ item.type_incident }}</div></div>
+      <div class="id-field"><div class="id-field-label">Gravité</div><div class="id-field-value"><span class="id-badge id-badge-{{ item.gravite }}">{{ item.gravite }}</span></div></div>
+      <div class="id-field"><div class="id-field-label">Statut</div><div class="id-field-value"><span class="id-badge id-badge-{{ item.statut }}">{{ item.statut }}</span></div></div>
+      <div class="id-field"><div class="id-field-label">Date de l'incident</div><div class="id-field-value">{{ item.date_incident|date:'d/m/Y H:i'|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Visite associée</div><div class="id-field-value">{% if item.visite %}<a href="{% url 'detail_visite' item.visite.pk %}" style="color:var(--primary);text-decoration:underline">Visite #{{ item.visite.pk }}</a>{% else %}-{% endif %}</div></div>
+      <div class="id-field id-field-full"><div class="id-field-label">Motif</div><div class="id-field-value" style="white-space:pre-line">{{ item.motif|default:'-' }}</div></div>
+    </div>
+  </section>
+
+  <section class="id-card">
+    <h2 class="id-section-title">Visiteur associé</h2>
+    <div class="id-grid id-grid-3">
+      <div class="id-field"><div class="id-field-label">Nom</div><div class="id-field-value">{{ item.visite.visiteur.nom|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Prénom</div><div class="id-field-value">{{ item.visite.visiteur.prenom|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Genre</div><div class="id-field-value">{{ item.visite.visiteur.genre|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Nationalité</div><div class="id-field-value">{{ item.visite.visiteur.nationalite|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Téléphone</div><div class="id-field-value">{{ item.visite.visiteur.telephone|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Email</div><div class="id-field-value">{{ item.visite.visiteur.email|default:'-' }}</div></div>
+    </div>
+  </section>
+
+  <section class="id-card">
+    <h2 class="id-section-title">Audit</h2>
+    <div class="id-grid id-grid-3">
+      <div class="id-field"><div class="id-field-label">Créé le</div><div class="id-field-value">{{ item.created_at|date:'d/m/Y H:i'|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Créé par</div><div class="id-field-value">{% if item.created_by %}{{ item.created_by.get_full_name|default:item.created_by.username }}{% else %}-{% endif %}</div></div>
+      <div class="id-field"><div class="id-field-label">Dernière modification</div><div class="id-field-value">{{ item.updated_at|date:'d/m/Y H:i'|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Modifié par</div><div class="id-field-value">{% if item.updated_by %}{{ item.updated_by.get_full_name|default:item.updated_by.username }}{% else %}-{% endif %}</div></div>
+    </div>
+  </section>
+
+  <div class="id-actions">
+    {% if perms.incidents.change_incident %}
+    <a href="{% url 'modifier_incident' item.pk %}" class="id-btn id-btn-primary">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Modifier
+    </a>
+    {% endif %}
+    {% if perms.incidents.delete_incident %}
+    <form method="post" action="{% url 'supprimer_incident' item.pk %}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet incident ?')" style="display:inline">
+      {% csrf_token %}
+      <button type="submit" class="id-btn id-btn-danger">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+        Supprimer
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Objets oubliés - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.oo>*+*{margin-top:1.5rem}
+.oo-header{display:flex;flex-direction:column;gap:1.25rem}
+@media(min-width:1024px){.oo-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.oo-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.oo-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:900;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;white-space:nowrap}
+.oo-btn svg{width:1rem;height:1rem}
+.oo-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.oo-btn-primary:hover{background:var(--primary-hover)}
+.oo-btn-secondary{background:#fff;color:var(--secondary);border:1px solid #fecaca}
+.oo-btn-secondary:hover{background:var(--secondary-light)}
+.oo-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
+.oo-btn-outline:hover{background:var(--primary-light)}
+.oo-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+@media(min-width:1024px){.oo-filters{grid-template-columns:1fr 220px auto}}
+.oo-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
+.oo-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.oo-input::placeholder{color:#94a3b8;font-weight:500}
+.oo-select{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg fill='none' stroke='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:1.25rem;padding-right:2.5rem}
+.oo-select:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
+.oo-table-wrap{border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 14px 35px rgba(15,23,42,.04)}
+.oo-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.oo-table thead{background:var(--primary-light)}
+.oo-table thead th{text-align:left;padding:1rem 1.25rem;font-weight:900;color:var(--primary);white-space:nowrap}
+.oo-table thead th:last-child{text-align:right}
+.oo-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+.oo-table tbody tr:hover{background:#f8fafc}
+.oo-table tbody tr:last-child{border-bottom:none}
+.oo-table tbody td{padding:1rem 1.25rem;color:#475569;vertical-align:middle}
+.oo-visiteur{display:flex;align-items:center;gap:.75rem}
+.oo-avatar{width:2.25rem;height:2.25rem;border-radius:9999px;overflow:hidden;flex-shrink:0;background:var(--primary-light);display:flex;align-items:center;justify-content:center}
+.oo-avatar img{width:100%;height:100%;object-fit:cover}
+.oo-avatar-placeholder{font-size:.6875rem;font-weight:900;color:var(--primary)}
+.oo-nom{font-weight:900;color:#0f172a;white-space:nowrap}
+.oo-badge{display:inline-flex;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.oo-badge-NON_RESTITUÉ{background:#fef3c7;color:#d97706}
+.oo-badge-RESTITUÉ{background:#dcfce7;color:#15803d}
+.oo-badge-DÉTRUIT{background:#fee2e2;color:#dc2626}
+.oo-action-group{display:flex;justify-content:flex-end;gap:.375rem}
+.oo-action-btn{display:inline-flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:.5rem;border:1px solid #e2e8f0;color:#64748b;background:#fff;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-decoration:none}
+.oo-action-btn:hover{background:#f1f5f9}
+.oo-action-btn-edit{border-color:rgba(18,112,184,.2);color:var(--primary)}
+.oo-action-btn-edit:hover{background:var(--primary-light)}
+.oo-action-btn-delete{border-color:rgba(229,27,53,.2);color:var(--secondary)}
+.oo-action-btn-delete:hover{background:var(--secondary-light)}
+.oo-action-btn svg{width:1rem;height:1rem}
+.oo-empty{text-align:center;padding:3rem 1rem;font-size:.875rem;font-weight:700;color:#94a3b8}
+.oo-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+.oo-pagination-info{font-size:.8125rem;font-weight:600;color:#64748b}
+.oo-pagination-steps{display:flex;align-items:center;gap:.25rem}
+.oo-page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:2.25rem;height:2.25rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.8125rem;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.oo-page-btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+.oo-page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.oo-btn-filter{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.25rem;font-size:.875rem;font-weight:900;border:none;cursor:pointer;background:var(--primary);color:#fff;transition:background .15s,box-shadow .15s;white-space:nowrap}.oo-btn-filter:hover{background:var(--primary-hover);box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="oo">
+  <div class="oo-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.14em">Objets oubliés</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Objets oubliés</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Gestion des objets perdus ou oubliés par les visiteurs.</p>
+    </div>
+    <div class="oo-actions">
+      <a href="{% url 'export_pdf_objets_oublies' %}" class="oo-btn oo-btn-secondary" target="_blank">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 7H5a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </a>
+      <a href="{% url 'export_excel_objets_oublies' %}" class="oo-btn oo-btn-outline">Export Excel</a>
+      {% if perms.objets_oublies.add_objetoublie %}
+      <a href="{% url 'ajouter_objet_oublie' %}" class="oo-btn oo-btn-primary">
+        Ajouter un objet oublié
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 4v16m8-8H4"/></svg>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <form class="oo-filters" method="GET" action="{% url 'liste_objets_oublies' %}">
+    <input class="oo-input" type="search" name="q" placeholder="Filtrer par visiteur, objet, lieu..." value="{{ query }}" />
+    <select class="oo-select" name="statut" onchange="this.form.submit()">
+      <option value="">Tous les statuts</option>
+      <option value="NON_RESTITUÉ" {% if statut_filter == 'NON_RESTITUÉ' %}selected{% endif %}>Non restitué</option>
+      <option value="RESTITUÉ" {% if statut_filter == 'RESTITUÉ' %}selected{% endif %}>Restitué</option>
+      <option value="DÉTRUIT" {% if statut_filter == 'DÉTRUIT' %}selected{% endif %}>Détruit</option>
+    </select>
+    <button type="submit" class="oo-btn-filter">Filtrer</button>
+  </form>
+
+  <div class="oo-table-wrap">
+    {% if page_obj %}
+    <table class="oo-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Visiteur</th>
+          <th>Objet</th>
+          <th>Catégorie</th>
+          <th>Département</th>
+          <th>Lieu</th>
+          <th>Statut</th>
+          <th>Date</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td style="font-weight:900;color:var(--primary)">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+          <td>
+            <div class="oo-visiteur">
+              {% if item.visite and item.visite.visiteur and item.visite.visiteur.photo %}
+              <div class="oo-avatar"><img src="{{ item.visite.visiteur.photo.url }}" alt="" /></div>
+              {% else %}
+              <div class="oo-avatar">
+                <span class="oo-avatar-placeholder">
+                  {% with v=item.visite.visiteur %}{% if v %}{{ v.prenom|first|upper }}{{ v.nom|first|upper }}{% else %}--{% endif %}{% endwith %}
+                </span>
+              </div>
+              {% endif %}
+              <div>
+                <div class="oo-nom">{% if item.visite and item.visite.visiteur %}{{ item.visite.visiteur.prenom }} {{ item.visite.visiteur.nom }}{% else %}-{% endif %}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-weight:900;color:#0f172a;white-space:nowrap">{{ item.nom_objet }}</td>
+          <td style="white-space:nowrap">{{ item.categorie|default:'-' }}</td>
+          <td style="white-space:nowrap">{{ item.departement.nom|default:'-' }}</td>
+          <td style="white-space:nowrap">{{ item.lieu_trouve|default:'-' }}</td>
+          <td><span class="oo-badge oo-badge-{{ item.statut }}">{{ item.statut }}</span></td>
+          <td style="white-space:nowrap">{{ item.date_trouve|date:'d/m/Y'|default:'-' }}</td>
+          <td>
+            <div class="oo-action-group">
+              <a href="{% url 'detail_objet_oublie' item.pk %}" class="oo-action-btn" title="Détail">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              {% if perms.objets_oublies.change_objetoublie %}<a href="{% url 'modifier_objet_oublie' item.pk %}" class="oo-action-btn oo-action-btn-edit" title="Modifier">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>{% endif %}
+              <form method="post" action="{% url 'supprimer_objet_oublie' item.pk %}" onsubmit="return confirm('Supprimer &quot;{{ item.nom_objet|escapejs }}&quot; ?')" style="display:inline">
+                {% csrf_token %}
+                {% if perms.objets_oublies.delete_objetoublie %}<button type="submit" class="oo-action-btn oo-action-btn-delete" title="Supprimer">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+                </button>{% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="oo-pagination">
+      <span class="oo-pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ page_obj.paginator.count }} objet(s)</span>
+      <div class="oo-pagination-steps">
+        {% if page_obj.has_previous %}
+          <a href="?{{ filter_params }}page=1" class="oo-page-btn">&laquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.previous_page_number }}" class="oo-page-btn">&lsaquo;</a>
+        {% endif %}
+        {% for num in page_links %}
+          {% if num == page_obj.paginator.ELLIPSIS %}
+            <span class="oo-page-btn" style="border:none;cursor:default">&hellip;</span>
+          {% elif num == page_obj.number %}
+            <span class="oo-page-btn active">{{ num }}</span>
+          {% else %}
+            <a href="?{{ filter_params }}page={{ num }}" class="oo-page-btn">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{{ filter_params }}page={{ page_obj.next_page_number }}" class="oo-page-btn">&rsaquo;</a>
+          <a href="?{{ filter_params }}page={{ page_obj.paginator.num_pages }}" class="oo-page-btn">&raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="oo-empty">Aucun objet oublié trouvé.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

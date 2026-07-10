@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+{% load user_tags %}
+{% block title %}Détail utilisateur - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.utd>*+*{margin-top:1.5rem}
+.utd-header{display:flex;flex-direction:column;gap:1rem}
+@media(min-width:640px){.utd-header{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+.utd-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:700;border:none;cursor:pointer;transition:background .15s,box-shadow .15s;text-decoration:none;text-align:center}
+.utd-btn svg{width:1.125rem;height:1.125rem}
+.utd-btn-ghost{background:#fff;color:#374151;border:1px solid #e2e8f0}
+.utd-btn-ghost:hover{background:#f8fafc}
+.utd-card{border-radius:1.5rem;border:1px solid #f1f5f9;background:#fff;padding:1.5rem;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+@media(min-width:640px){.utd-card{padding:2rem}}
+.utd-identity{display:flex;align-items:flex-start;gap:1rem}
+.utd-avatar{display:flex;width:3.5rem;height:3.5rem;align-items:center;justify-content:center;border-radius:1rem;background:var(--primary-light);color:var(--primary);font-size:1.25rem;font-weight:900;flex-shrink:0}
+.utd-name{font-size:1.5rem;font-weight:900;color:#0f172a}
+.utd-badge{display:inline-flex;margin-top:.25rem;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
+.utd-badge-actif{background:var(--primary-light);color:var(--primary)}
+.utd-badge-inactif{background:var(--secondary-light);color:var(--secondary)}
+.utd-username{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+.utd-grid{display:grid;gap:1.25rem;margin-top:2rem}
+@media(min-width:640px){.utd-grid{grid-template-columns:1fr 1fr}}
+.utd-field{border-radius:1rem;background:#f8fafc;padding:1rem}
+.utd-field-label{font-size:.8125rem;font-weight:700;color:#64748b}
+.utd-field-value{margin-top:.5rem;font-weight:900;color:#0f172a}
+.utd-role-tag{display:inline-flex;border-radius:.5rem;padding:.25rem .75rem;font-size:.75rem;font-weight:700}
+.utd-role-super{background:#fef3c7;color:#92400e}
+.utd-role-staff{background:#dbeafe;color:#1e40af}
+.utd-role-user{background:#f1f5f9;color:#475569}
+.utd-role-grp{background:#e0f2fe;color:#0369a1}
+.utd-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #f1f5f9}
+.utd-btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 6px -1px rgba(18,112,184,.2)}
+.utd-btn-primary:hover{background:var(--primary-hover)}
+.utd-btn-danger{background:var(--secondary);color:#fff}
+.utd-btn-danger:hover{background:var(--secondary-hover)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="utd">
+  <div class="utd-header">
+    <div>
+      <p style="font-size:.75rem;font-weight:900;color:var(--secondary);text-transform:uppercase;letter-spacing:.1em">Utilisateurs</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.5rem">Détail de l'utilisateur</h1>
+    </div>
+    <a href="{% url 'liste_utilisateurs' %}" class="utd-btn utd-btn-ghost">Retour</a>
+  </div>
+
+  <section class="utd-card">
+    <div class="utd-identity">
+      <span class="utd-avatar">{{ item.get_full_name|first|default:item.username|first|upper }}</span>
+      <div>
+        <h2 class="utd-name">{{ item.get_full_name|default:item.username }}</h2>
+        <span class="utd-badge utd-badge-{{ item.statut|lower }}">{{ item.statut }}</span>
+        <p class="utd-username">{{ item.username }}</p>
+      </div>
+    </div>
+
+    <div class="utd-grid">
+      <div class="utd-field">
+        <div class="utd-field-label">Email</div>
+        <div class="utd-field-value">{{ item.email }}</div>
+      </div>
+      <div class="utd-field">
+        <div class="utd-field-label">Téléphone</div>
+        <div class="utd-field-value">{{ item.telephone_mobile|default:'-' }}</div>
+      </div>
+      <div class="utd-field">
+        <div class="utd-field-label">Point d'entrée</div>
+        <div class="utd-field-value">{{ item.porte_entree.titre|default:'-' }}</div>
+      </div>
+      <div class="utd-field">
+        <div class="utd-field-label">Rôle</div>
+        <div class="utd-field-value">
+          {% user_role item as role_name %}<span class="utd-role-tag utd-role-grp">{{ role_name }}</span>
+        </div>
+      </div>
+      <div class="utd-field">
+        <div class="utd-field-label">Groupes (rôles)</div>
+        <div class="utd-field-value">
+          {% for g in item.groups.all %}
+          <span class="utd-role-tag" style="background:#f1f5f9;color:#475569;margin:0 .25rem .25rem 0">{{ g.name }}</span>
+          {% empty %}
+          <span style="color:#94a3b8">Aucun groupe</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="utd-field">
+        <div class="utd-field-label">Compte actif</div>
+        <div class="utd-field-value">{% if item.is_active %}Oui{% else %}Non{% endif %}</div>
+      </div>
+      <div class="utd-field">
+        <div class="utd-field-label">Dernière connexion</div>
+        <div class="utd-field-value">{{ item.last_login|date:'d/m/Y H:i'|default:'Jamais' }}</div>
+      </div>
+      <div class="utd-field">
+        <div class="utd-field-label">Créé le</div>
+        <div class="utd-field-value">{{ item.date_joined|date:'d/m/Y H:i' }}</div>
+      </div>
+    </div>
+
+    <div class="utd-actions">
+      {% if perms.utilisateurs.change_utilisateur %}
+      <a href="{% url 'modifier_utilisateur' item.pk %}" class="utd-btn utd-btn-primary">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Modifier
+      </a>
+      {% endif %}
+      {% if perms.utilisateurs.delete_utilisateur and not item.is_superuser %}
+      <form method="post" action="{% url 'supprimer_utilisateur' item.pk %}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer &quot;{{ item.get_full_name|default:item.username }}&quot; ?')" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="utd-btn utd-btn-danger">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001-1V5a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1m-8 0h8"/></svg>
+          Supprimer
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
