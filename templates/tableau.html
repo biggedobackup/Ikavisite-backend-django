@@ -157,7 +157,7 @@
         <p style="text-align:center;font-size:.875rem;color:#94a3b8;padding:2rem">Aucune donnée</p>
         {% endfor %}
       </div>
-      <a href="{% url 'liste_departements' %}" class="chart-link">Voir tous les départements <span>→</span></a>
+      <a href="{% url 'rapport_departements' %}" class="chart-link">Voir tous les départements <span>→</span></a>
     </div>
     {% endif %}
 
@@ -182,7 +182,7 @@
         </div>
         {% endfor %}
       </div>
-      <a href="{% url 'liste_visites' %}" class="chart-link">Voir le rapport détaillé <span>→</span></a>
+      <a href="{% url 'rapport_jours' %}" class="chart-link">Voir le rapport détaillé <span>→</span></a>
     </div>
     {% endif %}
 
@@ -205,7 +205,7 @@
         <p style="text-align:center;font-size:.875rem;color:#94a3b8;padding:2rem">Aucune donnée</p>
         {% endfor %}
       </div>
-      <a href="{% url 'liste_portes_entree' %}" class="chart-link">Voir les points d'entrée <span>→</span></a>
+      <a href="{% url 'rapport_points_entree' %}" class="chart-link">Voir les points d'entrée <span>→</span></a>
     </div>
     {% endif %}
   </div>
@@ -237,7 +237,7 @@
       {% else %}
       <div style="display:flex;align-items:center;justify-content:center;height:14rem;font-size:.875rem;font-weight:700;color:#94a3b8">Aucune donnée</div>
       {% endif %}
-      <a href="{% url 'liste_incidents' %}" class="chart-link">Voir tous les incidents <span>→</span></a>
+      <a href="{% url 'rapport_incidents' %}" class="chart-link">Voir tous les incidents <span>→</span></a>
     </div>
     {% endif %}
 
@@ -266,7 +266,7 @@
           {% endfor %}
         </div>
       </div>
-      <a href="{% url 'liste_types_visite' %}" class="chart-link">Voir le détail <span>→</span></a>
+      <a href="{% url 'rapport_types_visite' %}" class="chart-link">Voir le détail <span>→</span></a>
     </div>
     {% endif %}
   </div>

@@ -158,4 +158,46 @@ class CreneauSemaine(models.Model):
         return f'{self.jour_semaine} {self.heure_debut}-{self.heure_fin}'
 
 
+class ExceptionJour(models.Model):
+    """Journée d'exception (férié, événement, etc.) qui surcharge le planning hebdo."""
+    date = models.DateField(unique=True)
+    libelle = models.CharField(max_length=255)
+    est_chome = models.BooleanField(default=False, help_text='Si coché, journée entièrement Hors-Normes (pas de créneaux)')
+    statut = models.CharField(max_length=50, default='ACTIF')
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+'
+    )
+
+    class Meta:
+        db_table = 'exceptions_jour'
+        verbose_name = "Journée d'exception"
+        verbose_name_plural = "Journées d'exception"
+        ordering = ['date']
+
+    def __str__(self):
+        return f'{self.date} — {self.libelle}'
+
+
+class ExceptionJourCreneau(models.Model):
+    """Créneau spécifique pour une journée d'exception travaillée."""
+    exception_jour = models.ForeignKey(
+        ExceptionJour, on_delete=models.CASCADE,
+        related_name='creneaux', db_column='id_exception_jour'
+    )
+    heure_debut = models.TimeField()
+    heure_fin = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    class Meta:
+        db_table = 'exceptions_jour_creneaux'
+        verbose_name = "Créneau d'exception"
+        verbose_name_plural = "Créneaux d'exception"
+
+    def __str__(self):
+        return f'{self.heure_debut} → {self.heure_fin}'
+
+
 

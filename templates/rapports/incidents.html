@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Flux des incidents - IKAVISITE{% endblock %}
+{% block extra_css %}
+<style>
+.rp-wrap{display:grid;gap:1.25rem}
+.rp-header{margin-bottom:.5rem}
+.rp-header h1{font-size:1.875rem;font-weight:900;color:#0f172a;margin:0}
+.rp-header p{font-size:.875rem;font-weight:500;color:#64748b;margin:.25rem 0 0}
+
+.rp-filters{display:flex;flex-wrap:wrap;gap:.5rem;padding:1rem;border-radius:.75rem;background:#f8fafc;border:1px solid #e2e8f0}
+.rp-filter-chip{display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;border-radius:999px;font-size:.8125rem;font-weight:700;cursor:pointer;transition:all .15s;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;user-select:none}
+.rp-filter-chip input{display:none}
+.rp-filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.rp-filter-chip .rp-chip-count{font-size:.6875rem;opacity:.7}
+
+.rp-section{border-radius:1rem;border:1px solid #e2e8f0;background:#fff;overflow:hidden}
+.rp-section-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.rp-section-title{font-size:1rem;font-weight:900;color:#0f172a}
+.rp-section-count{font-size:.75rem;font-weight:700;color:var(--primary);background:#e8f3fc;padding:.25rem .625rem;border-radius:999px}
+.rp-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.rp-table th{text-align:left;padding:.625rem 1.25rem;font-size:.6875rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #f1f5f9;background:#fafbfc}
+.rp-table td{padding:.625rem 1.25rem;color:#334155;font-weight:600;border-bottom:1px solid #f8fafc}
+.rp-table tr:last-child td{border-bottom:none}
+.rp-table tbody tr:hover{background:#f8fafc}
+.rp-badge{display:inline-block;padding:.125rem .5rem;border-radius:999px;font-size:.6875rem;font-weight:800}
+.rp-badge-grave{background:#fef2f2;color:#dc2626}
+.rp-badge-critique{background:#fef2f2;color:#b91c1c}
+.rp-badge-moyenne{background:#fff7ed;color:#ea580c}
+.rp-badge-faible{background:#f0fdf4;color:#16a34a}
+.rp-empty{text-align:center;padding:2rem;color:#94a3b8;font-size:.875rem;font-weight:600}
+.rp-back{display:inline-flex;align-items:center;gap:.5rem;font-size:.875rem;font-weight:800;color:var(--primary);text-decoration:none;margin-bottom:1rem}
+.rp-back:hover{text-decoration:underline}
+@media(max-width:640px){
+  .rp-filters{flex-direction:column}
+  .rp-table{font-size:.75rem}
+  .rp-table th,.rp-table td{padding:.5rem .75rem}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rp-wrap">
+  <a href="{% url 'tableau_de_bord' %}" class="rp-back">← Retour au tableau de bord</a>
+  <div class="rp-header">
+    <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Rapport détaillé</p>
+    <h1>Flux des incidents</h1>
+    <p>Incidents regroupés par mois — cochez/décochez pour filtrer</p>
+  </div>
+
+  <form method="GET" class="rp-filters" id="filterForm">
+    {% for m in all_months %}
+    <label class="rp-filter-chip {% if not selected_months or m.0|stringformat:'s' in selected_months %}active{% endif %}">
+      <input type="checkbox" name="mois" value="{{ m.0 }}" {% if not selected_months or m.0|stringformat:'s' in selected_months %}checked{% endif %} onchange="this.parentElement.classList.toggle('active',this.checked);document.getElementById('filterForm').submit()">
+      {{ m.1 }}
+    </label>
+    {% endfor %}
+  </form>
+
+  {% for m in mois %}
+  <div class="rp-section">
+    <div class="rp-section-header">
+      <span class="rp-section-title">{{ m.nom }}</span>
+      <span class="rp-section-count">{{ m.count }} incident{{ m.count|pluralize }}</span>
+    </div>
+    {% if m.incidents %}
+    <div style="overflow-x:auto">
+    <table class="rp-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Personne</th>
+          <th>Date</th>
+          <th>Gravité</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inc in m.incidents %}
+        <tr>
+          <td>{{ inc.type_incident.nom|default:'-' }}</td>
+          <td>
+            {% if inc.personne %}{{ inc.personne.nom }} {{ inc.personne.prenom|default:'' }}
+            {% elif inc.visite and inc.visite.visiteur %}{{ inc.visite.visiteur.nom }} {{ inc.visite.visiteur.prenom|default:'' }}
+            {% else %}-{% endif %}
+          </td>
+          <td>{{ inc.created_at|date:'d/m/Y H:i' }}</td>
+          <td><span class="rp-badge rp-badge-{{ inc.gravite|lower }}">{{ inc.get_gravite_display }}</span></td>
+          <td>{{ inc.get_statut_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="rp-empty">Aucun incident ce mois</p>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="rp-section"><p class="rp-empty">Aucune donnée</p></div>
+  {% endfor %}
+</div>
+{% endblock %}

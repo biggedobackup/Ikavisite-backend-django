@@ -13,4 +13,7 @@ urlpatterns = [
     path('ajouter/ajax/', views.ajouter_creneau_ajax, name='ajouter_creneau_ajax'),
     path('supprimer/ajax/', views.supprimer_creneau_ajax, name='supprimer_creneau_ajax'),
     path('sauvegarder/', views.sauvegarder_config_planning, name='sauvegarder_config_planning'),
+    # AJAX Exceptions
+    path('exception/ajouter/', views.ajouter_exception_ajax, name='ajouter_exception_ajax'),
+    path('exception/supprimer/<int:pk>/', views.supprimer_exception_ajax, name='supprimer_exception_ajax'),
 ]

@@ -38,7 +38,7 @@ def tableau_de_bord(request):
     # ── Stats visites : 1 aggregation au lieu de 6 count() ────────────────
     stats_agg = vqs.aggregate(
         total=Count('id'),
-        en_cours=Count('id', filter=Q(statut='EN_COURS')),
+        en_cours=Count('id', filter=Q(statut__in=['EN_COURS', 'EXCEDE'])),
         termine=Count('id', filter=Q(statut='TERMINE')),
         excede=Count('id', filter=Q(statut='EXCEDE')),
         aujourdhui=Count('id', filter=Q(date_visite__date=today)),
@@ -47,14 +47,6 @@ def tableau_de_bord(request):
     # Le distinct_count sur les visiteurs est plus rapide séparément
     visiteurs_total = vqs.values('visiteur_id').distinct().count()
     stats_agg['visiteurs_distincts'] = visiteurs_total
-
-    # ── Liste noire ────────────────────────────────────────────────────────
-    ln_qs = Visiteur.objects.filter(statut='BLOQUE')
-    if start:
-        ln_qs = ln_qs.filter(created_at__date__gte=start)
-    if end:
-        ln_qs = ln_qs.filter(created_at__date__lte=end)
-    visiteurs_liste_noire = ln_qs.count()
 
     # ── Utilisateurs, départements, portes ──────────────────────────────────
     try:
@@ -99,9 +91,12 @@ def tableau_de_bord(request):
         for d in depts
     ]
 
-    # ── Visites par jour de la semaine : 1 requête au lieu de 7 ──────────
+    # ── Visites par jour de la semaine EN COURS : 1 requête ──────────
+    from datetime import timedelta
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
     wd_raw = dict(
-        vqs.filter(date_visite__isnull=False)
+        vqs.filter(date_visite__date__gte=monday, date_visite__date__lte=sunday)
         .annotate(wd=ExtractWeekDay('date_visite'))
         .values('wd')
         .annotate(c=Count('id'))
@@ -109,7 +104,7 @@ def tableau_de_bord(request):
     )
     jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     visits_by_day = [
-        {'day': j[:3], 'value': wd_raw.get(str(d), 0), 'height': min(wd_raw.get(str(d), 0) * 6, 160)}
+        {'day': j[:3], 'value': wd_raw.get(d, 0), 'height': min(wd_raw.get(d, 0) * 6, 160)}
         for j, d in zip(jours, [2, 3, 4, 5, 6, 7, 1])
     ]
 
@@ -163,12 +158,12 @@ def tableau_de_bord(request):
 
     stats = [
         {'icon': 'calendar', 'tone': 'primary', 'label': 'Total des visites',  'value': stats_agg['total'],          'sub': f"{stats_agg['en_cours']} en cours",       'url': 'liste_visites',       'perm': 'view_stat_total_visits'},
-        {'icon': 'today',   'tone': 'primary', 'label': 'Visites du jour',     'value': stats_agg['aujourdhui'],     'sub': f"{stats_agg['termine']} terminées",    'url': 'liste_visites', 'url_override': today_url, 'perm': 'view_stat_today_visits'},
-        {'icon': 'clock',   'tone': 'danger',  'label': 'Visites en cours',    'value': stats_agg['en_cours'],       'sub': 'en cours',                           'url': 'liste_visites_encours', 'perm': 'view_stat_en_cours'},
+        {'icon': 'today',   'tone': 'primary', 'label': 'Visites du jour',     'value': stats_agg['aujourdhui'],     'sub': f"{stats_agg.get('termine_aujourdhui', 0)} terminées aujourd'hui",    'url': 'liste_visites', 'url_override': today_url, 'perm': 'view_stat_today_visits'},
+        {'icon': 'clock',   'tone': 'danger',  'label': 'Visites en cours',    'value': stats_agg['en_cours'],       'sub': f"dont {stats_agg['excede']} excédées",                           'url': 'liste_visites_encours', 'perm': 'view_stat_en_cours'},
         {'icon': 'check',   'tone': 'success', 'label': 'Visites terminées',   'value': stats_agg['termine'],        'sub': 'terminées',                          'url': 'liste_visites_terminees', 'perm': 'view_stat_termine'},
-        {'icon': 'check-circle', 'tone': 'success', 'label': 'Visites terminées du jour', 'value': stats_agg.get('termine_aujourdhui', 0), 'sub': "aujourd'hui", 'url': 'liste_visites_terminees', 'perm': 'view_stat_termine_aujourdhui'},
+
         {'icon': 'alert',   'tone': 'danger',  'label': 'Visites excédées',    'value': stats_agg['excede'],         'sub': 'excédées',                           'url': 'liste_visites_excedees', 'perm': 'view_stat_excede'},
-        {'icon': 'users',   'tone': 'primary', 'label': 'Total des visiteurs', 'value': stats_agg['visiteurs_distincts'],'sub': f'{visiteurs_liste_noire} en liste noire', 'url': 'liste_visiteurs', 'perm': 'view_stat_visiteurs'},
+        {'icon': 'users',   'tone': 'primary', 'label': 'Total des visiteurs', 'value': stats_agg['visiteurs_distincts'],'sub': f'{personnes_liste_noire} en liste noire', 'url': 'liste_visiteurs', 'perm': 'view_stat_visiteurs'},
         {'icon': 'users',   'tone': 'primary', 'label': 'Total utilisateurs',  'value': utilisateurs_total,     'sub': f'{utilisateurs_actifs} comptes actifs',   'url': 'liste_utilisateurs', 'perm': 'view_stat_utilisateurs'},
         {'icon': 'building','tone': 'primary', 'label': 'Total départements',  'value': total_departements,     'sub': 'services enregistrés',               'url': 'liste_departements', 'perm': 'view_stat_departements'},
         {'icon': 'door',    'tone': 'primary', 'label': "Total portes d'entrée",'value': total_portes_entree,   'sub': "points d'accès",                     'url': 'liste_portes_entree', 'perm': 'view_stat_portes'},
@@ -204,6 +199,154 @@ def tableau_de_bord(request):
         'show_chart_visit_types': 'visites.view_chart_visit_types' in user_perms,
     }
     return render(request, 'tableau.html', context)
+
+
+# ─── Rapports détaillés ──────────────────────────────────────────────────
+
+@login_required
+def rapport_departements(request):
+    from datetime import timedelta
+    now = timezone.now()
+    today = now.date()
+    monday = today - timedelta(days=today.weekday())
+
+    qs = Visite.objects.select_related('visiteur', 'departement', 'personnel__departement').order_by('-date_visite')
+    all_depts = Departement.objects.filter(statut='ACTIF').order_by('nom')
+
+    selected = request.GET.getlist('dept')
+    if selected:
+        all_depts = all_depts.filter(pk__in=selected)
+        qs = qs.filter(departement_id__in=selected)
+
+    departements_data = []
+    for d in all_depts:
+        visites_dept = [v for v in qs if (v.departement_id == d.pk)]
+        departements_data.append({
+            'pk': d.pk, 'nom': d.nom,
+            'visites': visites_dept,
+            'count': len(visites_dept),
+        })
+
+    return render(request, 'rapports/departements.html', {
+        'departements': departements_data,
+        'all_depts': Departement.objects.filter(statut='ACTIF').order_by('nom'),
+        'selected_depts': [int(s) for s in selected if s.isdigit()],
+    })
+
+
+@login_required
+def rapport_jours(request):
+    from datetime import timedelta
+    now = timezone.now()
+    today = now.date()
+    monday = today - timedelta(days=today.weekday())
+
+    qs = Visite.objects.select_related('visiteur', 'departement').filter(
+        date_visite__date__gte=monday,
+        date_visite__date__lte=monday + timedelta(days=6)
+    ).order_by('date_visite')
+
+    jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+    selected = request.GET.getlist('jour')
+
+    jours_data = []
+    for i, nom in enumerate(jours):
+        d = monday + timedelta(days=i)
+        if selected and nom not in selected:
+            continue  # jour décoché → section masquée
+        visites_jour = [v for v in qs if v.date_visite.date() == d]
+        jours_data.append({
+            'nom': nom, 'date': d, 'visites': visites_jour,
+            'count': len(visites_jour),
+        })
+
+    return render(request, 'rapports/jours.html', {
+        'jours': jours_data,
+        'all_jours': jours,
+        'selected_jours': selected,
+        'semaine_debut': monday,
+    })
+
+
+@login_required
+def rapport_points_entree(request):
+    qs = Visite.objects.select_related('visiteur', 'porte_entree').order_by('-date_visite')
+    all_portes = PorteEntree.objects.filter(statut='ACTIF').order_by('titre')
+
+    selected = request.GET.getlist('porte')
+    if selected:
+        all_portes = all_portes.filter(pk__in=selected)
+        qs = qs.filter(porte_entree_id__in=selected)
+
+    portes_data = []
+    for p in all_portes:
+        visites_porte = [v for v in qs if v.porte_entree_id == p.pk]
+        portes_data.append({
+            'pk': p.pk, 'nom': p.titre,
+            'visites': visites_porte,
+            'count': len(visites_porte),
+        })
+
+    return render(request, 'rapports/points-entree.html', {
+        'portes': portes_data,
+        'all_portes': PorteEntree.objects.filter(statut='ACTIF').order_by('titre'),
+        'selected_portes': [int(s) for s in selected if s.isdigit()],
+    })
+
+
+@login_required
+def rapport_incidents(request):
+    now = timezone.now()
+    qs = Incident.objects.select_related('type_incident', 'personne', 'visite__visiteur').order_by('-created_at')
+
+    selected = request.GET.getlist('mois')
+    months_abbr = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
+                   'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+    all_months = [(m, months_abbr[m - 1]) for m in range(1, 13)]
+
+    if selected:
+        qs = qs.filter(created_at__month__in=[int(s) for s in selected if s.isdigit()])
+
+    mois_data = []
+    for m_num, m_abbr in all_months:
+        if selected and str(m_num) not in selected:
+            continue
+        incs = [inc for inc in qs if inc.created_at.month == m_num]
+        mois_data.append({
+            'pk': m_num, 'nom': f'{m_abbr} {now.year}',
+            'incidents': incs, 'count': len(incs),
+        })
+
+    return render(request, 'rapports/incidents.html', {
+        'mois': mois_data,
+        'all_months': all_months,
+        'selected_months': selected,
+    })
+
+
+@login_required
+def rapport_types_visite(request):
+    qs = Visite.objects.select_related('visiteur', 'type_visite', 'departement').order_by('-date_visite')
+    all_types = TypeVisite.objects.all().order_by('nom')
+
+    selected = request.GET.getlist('type')
+    if selected:
+        all_types = all_types.filter(pk__in=selected)
+        qs = qs.filter(type_visite_id__in=selected)
+
+    types_data = []
+    for t in all_types:
+        visites_type = [v for v in qs if v.type_visite_id == t.pk]
+        types_data.append({
+            'pk': t.pk, 'nom': t.nom,
+            'visites': visites_type, 'count': len(visites_type),
+        })
+
+    return render(request, 'rapports/types-visite.html', {
+        'types': types_data,
+        'all_types': TypeVisite.objects.all().order_by('nom'),
+        'selected_types': [int(s) for s in selected if s.isdigit()],
+    })
 
 
 # ─── Gestion des rôles (Groupes) ─────────────────────────────────────────

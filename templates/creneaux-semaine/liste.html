@@ -20,7 +20,7 @@
 .cp-section-sub{font-size:.8125rem;color:#64748b;font-weight:500;margin:0 0 1rem}
 
 /* ────────────── Carte jour ────────────── */
-.cp-day{background:#fff;border-radius:1rem;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cp-day{background:#fff;border-radius:1rem;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:1rem}
 .cp-day-header{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;background:#f8fafc;border-bottom:1px solid #f1f5f9}
 .cp-day-name{font-weight:900;font-size:.9375rem;color:#0f172a;display:flex;align-items:center;gap:.5rem}
 .cp-day-name .cp-day-num{font-size:.7rem;font-weight:700;color:#64748b;background:#e2e8f0;border-radius:50%;width:1.375rem;height:1.375rem;display:flex;align-items:center;justify-content:center}
@@ -57,6 +57,24 @@
 .cp-save-btn:active{transform:translateY(0)}
 .cp-save-btn svg{width:1.125rem;height:1.125rem}
 
+/* ────────────── Exceptions ────────────── */
+.cp-exc-card{background:#fff;border-radius:.75rem;border:1px solid #e2e8f0;padding:.875rem 1rem}
+.cp-exc-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.cp-exc-date{font-weight:900;font-size:.875rem;color:#0f172a}
+.cp-exc-label{font-weight:600;font-size:.8125rem;color:#64748b;margin-left:.5rem}
+.cp-exc-badge-chome{display:inline-block;font-size:.625rem;font-weight:800;background:#fef2f2;color:#dc2626;padding:.125rem .5rem;border-radius:999px;margin-left:.5rem}
+.cp-exc-del{width:1.5rem;height:1.5rem;border:none;background:transparent;color:#94a3b8;border-radius:6px;cursor:pointer;font-size:1.125rem;line-height:1;display:flex;align-items:center;justify-content:center}
+.cp-exc-del:hover{color:#e31b35;background:#fef2f2}
+.cp-exc-slots{display:flex;flex-wrap:wrap;gap:.375rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid #f1f5f9}
+.cp-exc-check{margin-top:.5rem}
+.cp-exc-check label{display:inline-flex;align-items:center;gap:.375rem;font-size:.8125rem;font-weight:700;color:#64748b;cursor:pointer}
+.cp-exc-slots-input{margin-top:.5rem;display:none}
+.cp-exc-slots-input.show{display:grid;gap:.5rem}
+.cp-exc-slot-row{display:flex;align-items:center;gap:.5rem}
+.cp-exc-slot-row input{width:110px;border-radius:.5rem;border:1px solid #e2e8f0;padding:.375rem .5rem;font-size:.8125rem;font-weight:600}
+.cp-exc-slot-row button{border:none;background:transparent;color:#94a3b8;cursor:pointer;font-size:1rem;padding:0 .25rem}
+.cp-exc-slot-row button:hover{color:#e31b35}
+
 /* ────────────── Toast / overlay ────────────── */
 .cp-toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:.75rem 1.5rem;border-radius:.75rem;font-size:.8125rem;font-weight:600;z-index:9999;box-shadow:0 10px 25px rgba(0,0,0,.15);animation:cp-in .3s ease;pointer-events:none}
 @keyframes cp-in{from{opacity:0;transform:translateX(-50%) translateY(.5rem)}}
@@ -79,12 +97,6 @@
       <span class="cp-header-badge">⚙️ Planification</span>
       <h1>Créneaux de visite</h1>
       <p>Configurez les plages horaires par jour.</p>
-    </div>
-    <div class="cp-actions" style="margin-top:0">
-      <button type="button" class="cp-save-btn" onclick="saveAll()">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-        Enregistrer
-      </button>
     </div>
   </div>
 
@@ -132,6 +144,45 @@
     {% endfor %}
   </div>
 
+  <!-- ═══ Journées d'exception ═══ -->
+  <div style="margin-top:2rem">
+    <p class="cp-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5 4l7-2 7 2v6c0 5-3.2 9.4-7 10-3.8-.6-7-5-7-10V4z"/></svg>
+      Journées d'exception
+    </p>
+    <p class="cp-section-sub">Définissez des journées spécifiques (fériés, événements) qui surchargent le planning général.</p>
+
+    <div id="exceptions-list" style="display:grid;gap:.75rem">
+      {% for exc in exceptions %}
+      <div class="cp-exc-card" data-exc-id="{{ exc.pk }}">
+        <div class="cp-exc-header">
+          <div>
+            <span class="cp-exc-date">{{ exc.date|date:'d/m/Y' }}</span>
+            <span class="cp-exc-label">{{ exc.libelle }}</span>
+            {% if exc.est_chome %}
+            <span class="cp-exc-badge-chome">Chômé</span>
+            {% endif %}
+          </div>
+          <button type="button" class="cp-exc-del" onclick="deleteException({{ exc.pk }})" title="Supprimer">&times;</button>
+        </div>
+        {% if not exc.est_chome and exc.creneaux.all %}
+        <div class="cp-exc-slots">
+          {% for c in exc.creneaux.all %}
+          <span class="cp-slot">{{ c.heure_debut|time:'H:i' }} → {{ c.heure_fin|time:'H:i' }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p style="font-size:.8125rem;font-weight:600;color:#94a3b8;padding:.5rem 0">Aucune journée d'exception définie.</p>
+      {% endfor %}
+    </div>
+
+    <button type="button" class="cp-add-slot" onclick="openExceptionModal()" style="margin-top:.75rem">
+      + Ajouter une journée d'exception
+    </button>
+  </div>
+
   <div class="cp-actions" style="margin-top:0">
     <button type="button" class="cp-save-btn" onclick="saveAll()">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
@@ -156,6 +207,40 @@
     <div style="display:flex;gap:.625rem;margin-top:1.25rem;justify-content:flex-end">
       <button type="button" onclick="closeModal()" style="border-radius:.625rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:700;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer">Annuler</button>
       <button type="button" onclick="confirmSlot()" style="border-radius:.625rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:700;border:none;background:#1270b8;color:#fff;cursor:pointer">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay modal pour ajout d'exception -->
+<div id="excModal" style="display:none;position:fixed;inset:0;z-index:8889;background:rgba(15,23,42,.4);backdrop-filter:blur(2px);align-items:center;justify-content:center" onclick="if(event.target===this)closeExcModal()">
+  <div style="background:#fff;border-radius:1rem;padding:1.5rem;width:90%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,.15);margin:1rem" onclick="event.stopPropagation()">
+    <p style="font-weight:900;font-size:1.0625rem;color:#0f172a;margin:0 0 1rem">Ajouter une journée d'exception</p>
+    <div style="display:grid;gap:.75rem">
+      <label style="font-size:.8125rem;font-weight:700;color:#475569">Date
+        <input type="date" id="excDate" style="display:block;width:100%;margin-top:.375rem;border-radius:.625rem;border:1px solid #e2e8f0;padding:.625rem .875rem;font-size:.875rem;font-weight:600" required>
+      </label>
+      <label style="font-size:.8125rem;font-weight:700;color:#475569">Libellé
+        <input type="text" id="excLibelle" placeholder="Ex: Fête nationale, Jour férié..." style="display:block;width:100%;margin-top:.375rem;border-radius:.625rem;border:1px solid #e2e8f0;padding:.625rem .875rem;font-size:.875rem;font-weight:600" required>
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:.5rem;font-size:.8125rem;font-weight:700;color:#475569;cursor:pointer">
+        <input type="checkbox" id="excChome" onchange="toggleExcSlots()"> Journée chômée (pas de créneaux)
+      </label>
+      <div id="excSlotsContainer" style="display:grid;gap:.5rem">
+        <p style="font-size:.75rem;font-weight:700;color:#64748b;margin:0">Créneaux horaires</p>
+        <div id="excSlotsList" style="display:grid;gap:.375rem">
+          <div class="cp-exc-slot-row">
+            <input type="time" class="exc-slot-start" required>
+            <span style="font-size:.8125rem;color:#94a3b8">→</span>
+            <input type="time" class="exc-slot-end" required>
+            <button type="button" onclick="this.parentElement.remove()" title="Retirer">&times;</button>
+          </div>
+        </div>
+        <button type="button" onclick="addExcSlotRow()" style="font-size:.75rem;font-weight:700;color:#1270b8;background:none;border:1px dashed #1270b8;border-radius:.5rem;padding:.375rem;cursor:pointer">+ Ajouter un créneau</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:.625rem;margin-top:1.25rem;justify-content:flex-end">
+      <button type="button" onclick="closeExcModal()" style="border-radius:.625rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:700;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer">Annuler</button>
+      <button type="button" onclick="confirmException()" style="border-radius:.625rem;padding:.625rem 1.25rem;font-size:.8125rem;font-weight:700;border:none;background:#1270b8;color:#fff;cursor:pointer">Ajouter</button>
     </div>
   </div>
 </div>
@@ -313,6 +398,103 @@ function showToast(msg) {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(function(){ t.remove(); }, 2500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Journées d'exception
+// ═══════════════════════════════════════════════════════════════════════════
+function openExceptionModal() {
+  document.getElementById('excDate').value = '';
+  document.getElementById('excLibelle').value = '';
+  document.getElementById('excChome').checked = false;
+  document.getElementById('excSlotsContainer').style.display = 'grid';
+  document.getElementById('excSlotsList').innerHTML =
+    '<div class="cp-exc-slot-row">' +
+    '<input type="time" class="exc-slot-start" required>' +
+    '<span style="font-size:.8125rem;color:#94a3b8">→</span>' +
+    '<input type="time" class="exc-slot-end" required>' +
+    '<button type="button" onclick="this.parentElement.remove()">&times;</button>' +
+    '</div>';
+  document.getElementById('excModal').style.display = 'flex';
+}
+
+function closeExcModal() {
+  document.getElementById('excModal').style.display = 'none';
+}
+
+function toggleExcSlots() {
+  var chome = document.getElementById('excChome').checked;
+  document.getElementById('excSlotsContainer').style.display = chome ? 'none' : 'grid';
+}
+
+function addExcSlotRow() {
+  var row = document.createElement('div');
+  row.className = 'cp-exc-slot-row';
+  row.innerHTML =
+    '<input type="time" class="exc-slot-start" required>' +
+    '<span style="font-size:.8125rem;color:#94a3b8">→</span>' +
+    '<input type="time" class="exc-slot-end" required>' +
+    '<button type="button" onclick="this.parentElement.remove()">&times;</button>';
+  document.getElementById('excSlotsList').appendChild(row);
+}
+
+function confirmException() {
+  var date = document.getElementById('excDate').value;
+  var libelle = document.getElementById('excLibelle').value.trim();
+  var chome = document.getElementById('excChome').checked;
+
+  if (!date || !libelle) { showToast('Date et libellé requis.'); return; }
+
+  var slots = [];
+  if (!chome) {
+    var rows = document.querySelectorAll('#excSlotsList .cp-exc-slot-row');
+    rows.forEach(function(r) {
+      var s = r.querySelector('.exc-slot-start').value;
+      var e = r.querySelector('.exc-slot-end').value;
+      if (s && e) slots.push({debut: s, fin: e});
+    });
+  }
+
+  fetch('{% url "ajouter_exception_ajax" %}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+    body: JSON.stringify({date: date, libelle: libelle, est_chome: chome, slots: slots})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data.ok) {
+      closeExcModal();
+      showToast('Exception ajoutée ✅');
+      location.reload();
+    } else {
+      showToast('Erreur : ' + (data.error || 'Inconnue'));
+    }
+  })
+  .catch(function(){ showToast('Erreur réseau'); });
+}
+
+function deleteException(id) {
+  if (!confirm('Supprimer cette journée d\'exception ?')) return;
+  fetch('{% url "supprimer_exception_ajax" 0 %}'.replace('0', id), {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data.ok) {
+      showToast('Exception supprimée ✅');
+      var card = document.querySelector('.cp-exc-card[data-exc-id="' + id + '"]');
+      if (card) card.remove();
+      // Si plus d'exceptions, afficher message vide
+      var list = document.getElementById('exceptions-list');
+      if (list.querySelectorAll('.cp-exc-card').length === 0) {
+        list.innerHTML = '<p style="font-size:.8125rem;font-weight:600;color:#94a3b8;padding:.5rem 0">Aucune journée d\'exception définie.</p>';
+      }
+    } else {
+      showToast('Erreur : ' + (data.error || 'Inconnue'));
+    }
+  })
+  .catch(function(){ showToast('Erreur réseau'); });
 }
 </script>
 {% endblock %}

@@ -1,10 +1,15 @@
 from django.urls import path
 from . import views
-from core.views import tableau_de_bord
+from core.views import tableau_de_bord, rapport_departements, rapport_jours, rapport_points_entree, rapport_incidents, rapport_types_visite
 
 urlpatterns = [
     path('', views.connexion_view, name='connexion'),
     path('tableau-de-bord/', tableau_de_bord, name='tableau_de_bord'),
+    path('rapports/departements/', rapport_departements, name='rapport_departements'),
+    path('rapports/jours/', rapport_jours, name='rapport_jours'),
+    path('rapports/points-entree/', rapport_points_entree, name='rapport_points_entree'),
+    path('rapports/incidents/', rapport_incidents, name='rapport_incidents'),
+    path('rapports/types-visite/', rapport_types_visite, name='rapport_types_visite'),
     path('profil/', views.profil_view, name='profil'),
     path('deconnexion/', views.deconnexion_view, name='deconnexion'),
     path('utilisateurs/', views.liste_utilisateurs, name='liste_utilisateurs'),

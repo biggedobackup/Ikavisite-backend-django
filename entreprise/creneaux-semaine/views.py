@@ -1,13 +1,13 @@
 from io import BytesIO
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
-from entreprise.models import CreneauSemaine
+from entreprise.models import CreneauSemaine, ExceptionJour, ExceptionJourCreneau
 from utilisateurs.models import HistoriqueAction
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
@@ -30,7 +30,6 @@ def liste_creneaux(request):
     jours_data = []
     for jour in JOURS:
         slots = [s for s in all_items if s.jour_semaine == jour]
-        # Un jour est "actif" s'il a au moins un créneau ACTIF
         has_active = any(s.statut == 'ACTIF' for s in slots)
         jours_data.append({
             'jour_semaine': jour,
@@ -38,8 +37,12 @@ def liste_creneaux(request):
             'slots': slots,
         })
 
+    # Exceptions
+    exceptions = ExceptionJour.objects.filter(statut='ACTIF').prefetch_related('creneaux').order_by('date')
+
     context = {
         'jours_data': jours_data,
+        'exceptions': exceptions,
         'query': query,
     }
     return render(request, 'creneaux-semaine/liste.html', context)
@@ -281,4 +284,70 @@ def sauvegarder_config_planning(request):
     HistoriqueAction.log(request, 'CONFIG_PLANNING', 'CreneauSemaine',
                          details=f'Sauvegarde planning: {len(days)} jours')
 
+    return JsonResponse({'ok': True})
+
+
+# ─── AJAX Journées d'exception ────────────────────────────────────────────
+
+@login_required
+def ajouter_exception_ajax(request):
+    """Ajouter une journée d'exception."""
+    from django.http import JsonResponse
+    import json
+    from datetime import date as dt_date
+
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST requis'}, status=405)
+
+    try:
+        body = json.loads(request.body)
+    except (ValueError, AttributeError):
+        return JsonResponse({'ok': False, 'error': 'JSON invalide'}, status=400)
+
+    date_str = body.get('date', '').strip()
+    libelle = body.get('libelle', '').strip()
+    est_chome = body.get('est_chome', False)
+    slots = body.get('slots', [])
+
+    if not date_str or not libelle:
+        return JsonResponse({'ok': False, 'error': 'Date et libellé requis.'})
+
+    try:
+        d = dt_date.fromisoformat(date_str)
+    except (ValueError, TypeError):
+        return JsonResponse({'ok': False, 'error': 'Format de date invalide.'})
+
+    if ExceptionJour.objects.filter(date=d).exists():
+        return JsonResponse({'ok': False, 'error': 'Une exception existe déjà pour cette date.'})
+
+    exc = ExceptionJour.objects.create(
+        date=d, libelle=libelle, est_chome=est_chome,
+        created_by=request.user,
+    )
+
+    for s in slots:
+        debut = s.get('debut', '').strip()
+        fin = s.get('fin', '').strip()
+        if debut and fin:
+            ExceptionJourCreneau.objects.create(
+                exception_jour=exc, heure_debut=debut, heure_fin=fin
+            )
+
+    HistoriqueAction.log(request, 'AJOUT', 'ExceptionJour', entite_id=exc.pk,
+                         details=f'{d} — {libelle} (chômé={est_chome})')
+    return JsonResponse({'ok': True, 'id': exc.pk})
+
+
+@login_required
+def supprimer_exception_ajax(request, pk):
+    """Supprimer une journée d'exception."""
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST requis'}, status=405)
+
+    exc = get_object_or_404(ExceptionJour, pk=pk)
+    HistoriqueAction.log(request, 'SUPPRESSION', 'ExceptionJour', entite_id=exc.pk,
+                         details=f'{exc.date} — {exc.libelle}')
+    exc.delete()
     return JsonResponse({'ok': True})
