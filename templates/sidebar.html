@@ -122,12 +122,13 @@
           <svg class="nav-chevron{% if '/incidents/' in request.path %} open{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </a>
         <div id="sub-incidents" class="ika-submenu{% if '/incidents/' not in request.path %} hidden{% endif %}">
+          {% if perms.incidents.view_typeincident %}
+          <a href="{% url 'liste_types_incident' %}"{% if u == 'liste_types_incident' or u == 'ajouter_type_incident' or u == 'modifier_type_incident' %} class="active"{% endif %}>Types d'incident</a>
+          {% endif %}
           {% if perms.incidents.view_incident %}
-          <a href="{% url 'detection_incidents' %}"{% if u == 'detection_incidents' %} class="active"{% endif %}>Détection</a>
           <a href="{% url 'liste_incidents' %}"{% if u == 'liste_incidents' or u == 'ajouter_incident' or u == 'detail_incident' or u == 'modifier_incident' %} class="active"{% endif %}>Liste des incidents</a>
           {% endif %}
         </div>
-      </div>
       {% endwith %}
       {% endif %}
 
@@ -162,9 +163,6 @@
           <svg class="nav-chevron{% if '/liste-noire/' in request.path %} open{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </a>
         <div id="sub-liste-noire" class="ika-submenu{% if '/liste-noire/' not in request.path %} hidden{% endif %}">
-          {% if perms.liste_noire.view_typelistenoire %}
-          <a href="{% url 'liste_types_liste_noire' %}"{% if u == 'liste_types_liste_noire' or u == 'ajouter_type_liste_noire' or u == 'detail_type_liste_noire' or u == 'modifier_type_liste_noire' %} class="active"{% endif %}>Types de liste noire</a>
-          {% endif %}
           {% if perms.liste_noire.view_listenoire %}
           <a href="{% url 'liste_listes_noires' %}"{% if u == 'liste_listes_noires' or u == 'ajouter_liste_noire' or u == 'detail_liste_noire' or u == 'modifier_liste_noire' %} class="active"{% endif %}>Liste noire</a>
           <a href="{% url 'liste_detections_liste_noire' %}"{% if u == 'liste_detections_liste_noire' or u == 'detail_detection_liste_noire' %} class="active"{% endif %}>Détections liste noire</a>
@@ -233,17 +231,16 @@
         {% if perms.visites.view_visiterminee %}<a href="{% url 'liste_visites_terminees' %}" class="ika-nav-item">Visites terminées</a>{% endif %}
         {% if perms.visites.view_visiteexcedee %}<a href="{% url 'liste_visites_excedees' %}" class="ika-nav-item">Visites excédées</a>{% endif %}
         {% if perms.visites.view_visiteur %}<a href="{% url 'liste_visiteurs' %}" class="ika-nav-item">Visiteurs</a>{% endif %}
-        {% if perms.incidents.view_incident %}<a href="{% url 'detection_incidents' %}" class="ika-nav-item">Détection incidents</a>{% endif %}
+        {% if perms.incidents.view_typeincident %}<a href="{% url 'liste_types_incident' %}" class="ika-nav-item">Types d'incident</a>{% endif %}
         {% if perms.incidents.view_incident %}<a href="{% url 'liste_incidents' %}" class="ika-nav-item">Liste des incidents</a>{% endif %}
         {% if perms.objets_oublies.view_objetoublie %}<a href="{% url 'detection_objets_oublies' %}" class="ika-nav-item">Détection objets</a>{% endif %}
         {% if perms.objets_oublies.view_objetoublie %}<a href="{% url 'liste_objets_oublies' %}" class="ika-nav-item">Objets oubliés</a>{% endif %}
       </div>
       {% endif %}
 
-      {% if perms.liste_noire.view_listenoire or perms.liste_noire.view_typelistenoire %}
+      {% if perms.liste_noire.view_listenoire %}
       <div class="ika-nav-section">
         <p class="ika-nav-section-title">Contrôles de sécurité</p>
-        {% if perms.liste_noire.view_typelistenoire %}<a href="{% url 'liste_types_liste_noire' %}" class="ika-nav-item">Types de liste noire</a>{% endif %}
         {% if perms.liste_noire.view_listenoire %}<a href="{% url 'liste_listes_noires' %}" class="ika-nav-item">Listes noires</a>{% endif %}
         {% if perms.liste_noire.view_listenoire %}<a href="{% url 'liste_detections_liste_noire' %}" class="ika-nav-item">Détections liste noire</a>{% endif %}
       </div>

@@ -31,7 +31,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from alertes_et_notifications.models import Alerte
 from .models import TypeVisite, Visite, Visiteur
 from entreprise.models import ParametreEntreprise, PorteEntree, Personnel, Departement
-from incidents.models import Incident, DetectionIncident
+from incidents.models import Incident
 from liste_noire.models import ListeNoire
 from objets_oublies.models import ObjetOublie
 
@@ -41,7 +41,7 @@ from objets_oublies.models import ObjetOublie
 def _base_qs():
     return Visite.objects.all().select_related(
         'type_visite', 'visiteur', 'porte_entree',
-        'personnel__departement',
+        'personnel__departement', 'departement',
     )
 
 
@@ -339,6 +339,7 @@ def _save_signature(signature_data, prefix='signature'):
 
 def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False, user=None, porte_entree_id=None):
     matches = []
+    has_block = False
     q_nom = Q(nom__iexact=nom)
     q_prenom = Q(prenom__iexact=prenom) if prenom else Q()
     q_nip = Q(numero_nip=numero_nip) if numero_nip else Q()
@@ -351,7 +352,8 @@ def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False
 
     for ln in ListeNoire.objects.filter(q, statut='ACTIF').select_related('type_liste_noire'):
         detail = ln.motif or (ln.type_liste_noire.nom if hasattr(ln, 'type_liste_noire') and ln.type_liste_noire else 'Inscrit en liste noire')
-        matches.append({'type': 'Liste noire', 'nom': ln.nom, 'prenom': ln.prenom, 'detail': detail, 'pk': ln.pk})
+        has_block = True
+        matches.append({'type': 'Liste noire', 'severity': 'BLOCK', 'nom': ln.nom, 'prenom': ln.prenom, 'detail': detail, 'pk': ln.pk})
         if save_detections and user and porte_entree_id:
             from liste_noire.models import DetectionListeNoire
             DetectionListeNoire.objects.create(
@@ -363,18 +365,26 @@ def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False
                 notes=f'Détecté lors de la création d\'une visite pour {nom} {prenom}',
                 created_by=user,
             )
-    for inc in Incident.objects.filter(visite__visiteur__in=Visiteur.objects.filter(q)).select_related('visite__visiteur'):
-        detail = f'{inc.type_incident} — {inc.gravite}'
-        matches.append({'type': 'Incident', 'nom': inc.visite.visiteur.nom if inc.visite and inc.visite.visiteur else nom, 'prenom': inc.visite.visiteur.prenom if inc.visite and inc.visite.visiteur else prenom, 'detail': detail, 'pk': inc.pk})
-        if save_detections and user:
-            DetectionIncident.objects.create(
-                incident=inc,
-                date_detection=timezone.now(),
-                confiance='MOYENNE',
-                statut='ACTIF',
-                notes=f'Détecté lors de la création d\'une visite pour {nom} {prenom}',
-                created_by=user,
-            )
+    visiteurs = Visiteur.objects.filter(q)
+    # Incidents et flag_avertissement
+    for inc in Incident.objects.filter(
+        Q(visite__visiteur__in=visiteurs) | Q(personne__in=visiteurs)
+    ).select_related('visite__visiteur', 'personne'):
+        p_nom = nom; p_prenom = prenom
+        if inc.visite and inc.visite.visiteur:
+            p_nom = inc.visite.visiteur.nom; p_prenom = inc.visite.visiteur.prenom
+        elif inc.personne:
+            p_nom = inc.personne.nom; p_prenom = inc.personne.prenom
+        detail = f'{inc.titre or inc.get_type_incident_display()} — {inc.get_gravite_display()}'
+        # Si pas déjà bloqué, signaler comme avertissement
+        if not has_block:
+            matches.append({'type': 'Incident', 'severity': 'WARN', 'nom': p_nom, 'prenom': p_prenom, 'detail': detail, 'pk': inc.pk})
+    # Vérification flag_avertissement sur le visiteur
+    if not has_block:
+        for v in visiteurs.filter(flag_avertissement=True):
+            if not any(m['type'] == 'Incident' and m.get('severity') == 'WARN' for m in matches):
+                matches.append({'type': 'Vigilance', 'severity': 'WARN', 'nom': v.nom, 'prenom': v.prenom,
+                                'detail': 'Visiteur sous vigilance accrue (incidents antérieurs FAIBLE/MOYENNE)', 'pk': v.pk})
     for obj in ObjetOublie.objects.filter(visite__visiteur__in=Visiteur.objects.filter(q)).select_related('visite__visiteur'):
         detail = f'{obj.nom_objet} ({obj.categorie})' if obj.categorie else obj.nom_objet
         matches.append({'type': 'Objet oublié', 'nom': obj.visite.visiteur.nom if obj.visite and obj.visite.visiteur else nom, 'prenom': obj.visite.visiteur.prenom if obj.visite and obj.visite.visiteur else prenom, 'detail': detail, 'pk': obj.pk})
@@ -452,6 +462,26 @@ def ajouter_visite(request):
             visiteur.photo = _save_signature(portrait_data, 'portrait')
             visiteur.save(update_fields=['photo'])
 
+        # Vérification Liste Noire ACTIF → blocage avant création
+        pre_matches = _detect_matches(
+            visiteur.nom, visiteur.prenom,
+            visiteur.numero_piece, visiteur.numero_nip,
+            save_detections=False
+        )
+        if any(m.get('severity') == 'BLOCK' for m in pre_matches):
+            block_details = [m['detail'] for m in pre_matches if m.get('severity') == 'BLOCK']
+            messages.error(request, f"🔴 Accès REFUSÉ — {visiteur.nom} {visiteur.prenom} est inscrit sur la Liste Noire. Motif : {' ; '.join(block_details)}")
+            ctx = _base_ctx()
+            ctx['detection_matches_json'] = json.dumps({
+                'nom': visiteur.nom, 'prenom': visiteur.prenom,
+                'num_piece': visiteur.numero_nip or visiteur.numero_piece or '',
+                'groups': {
+                    'liste_noire': [m for m in pre_matches if m['type'] == 'Liste noire'],
+                    'vigilance': [m for m in pre_matches if m['type'] == 'Vigilance'],
+                },
+            })
+            return render(request, 'visites/ajouter.html', ctx)
+
         arrival = request.POST.get('arrival_datetime', '').strip()
         planned_departure = request.POST.get('planned_departure_datetime', '').strip()
         departure = request.POST.get('departure_datetime', '').strip()
@@ -473,7 +503,19 @@ def ajouter_visite(request):
         planned_dt, planned_date, planned_time = _parse_dt_local(planned_departure)
         departure_dt, departure_date, departure_time = _parse_dt_local(departure)
 
-        sig_entree = _save_signature(request.POST.get('signature_entree_data', ''))
+        # Validation Hors-Normes : "Personne visitée" obligatoire si Hors-Normes
+        personnel_id_post = request.POST.get('personnel', '').strip()
+        if not personnel_id_post and arrival_date and arrival_time:
+            from entreprise.utils import determine_visit_mode, MODE_HORS_NORMES
+            mode = determine_visit_mode(arrival_date, arrival_time)
+            if mode == MODE_HORS_NORMES:
+                messages.error(request, "En période Hors-Normes, le champ 'Personne visitée' est obligatoire.")
+                return render(request, 'visites/ajouter.html', _base_ctx())
+
+        porte_id = request.POST.get('porte_entree')
+        if not porte_id:
+            porte_id = str(request.user.porte_entree_id) if request.user.porte_entree_id else None
+        sig_entree = None
         sig_sortie = _save_signature(request.POST.get('signature_sortie_data', ''))
 
         visite = Visite(
@@ -482,6 +524,7 @@ def ajouter_visite(request):
             genre=visiteur.genre,
             porte_entree_id=request.POST.get('porte_entree'),
             personnel_id=request.POST.get('personnel') or None,
+            departement_id=request.POST.get('departement') or None,
             date_visite=arrival_dt,
             heure_arrivee=arrival_time,
             motif=request.POST.get('motif', '').strip() or None,
@@ -520,6 +563,7 @@ def ajouter_visite(request):
                 'liste_noire': [m for m in matches if m['type'] == 'Liste noire'],
                 'incident': [m for m in matches if m['type'] == 'Incident'],
                 'objet_oublie': [m for m in matches if m['type'] == 'Objet oublié'],
+                'vigilance': [m for m in matches if m['type'] == 'Vigilance'],
             }
             ctx = _base_ctx()
             ctx['detection_matches_json'] = json.dumps({
@@ -612,12 +656,21 @@ def modifier_visite(request, pk):
         planned_dt, planned_date, planned_time = _parse_dt_local(planned_departure)
         departure_dt, departure_date, departure_time = _parse_dt_local(departure)
 
-        sig_entree_data = request.POST.get('signature_entree_data', '')
+        # Validation Hors-Normes (modification)
+        personnel_id_post = request.POST.get('personnel', '').strip()
+        if not personnel_id_post and arrival_date and arrival_time:
+            from entreprise.utils import determine_visit_mode, MODE_HORS_NORMES
+            mode = determine_visit_mode(arrival_date, arrival_time)
+            if mode == MODE_HORS_NORMES:
+                messages.error(request, "En période Hors-Normes, le champ 'Personne visitée' est obligatoire.")
+                return render(request, 'visites/modifier.html', {'item': item, **_base_ctx()})
+
         sig_sortie_data = request.POST.get('signature_sortie_data', '')
 
         item.type_visite_id = request.POST.get('type_visite')
-        item.porte_entree_id = request.POST.get('porte_entree')
+        item.porte_entree_id = request.POST.get('porte_entree') or item.porte_entree_id
         item.personnel_id = request.POST.get('personnel') or None
+        item.departement_id = request.POST.get('departement') or None
         item.date_visite = arrival_dt
         item.heure_arrivee = arrival_time
         item.date_depart_prevue = planned_date
@@ -629,8 +682,6 @@ def modifier_visite(request, pk):
         item.observations = request.POST.get('observations', '').strip() or None
         item.numero_badge = request.POST.get('numero_badge', '').strip() or None
         item.genre = v.genre
-        if sig_entree_data:
-            item.signature_entree = _save_signature(sig_entree_data, 'signature_entree')
         if sig_sortie_data:
             item.signature_sortie = _save_signature(sig_sortie_data, 'signature_sortie')
         item.updated_by = request.user
@@ -698,7 +749,7 @@ def terminer_visite(request, pk):
 def export_pdf_visites(request):
     items = _base_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite', 'Statut']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '-', v.statut]
             for i, v in enumerate(items)]
     return _export_pdf(rows, headers, 'Liste des visites', 'visites', [0.5, 2, 1.5, 1.5, 1.5, 1])
@@ -708,7 +759,7 @@ def export_pdf_visites(request):
 def export_excel_visites(request):
     items = _base_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite', 'Statut']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '', v.statut]
             for i, v in enumerate(items)]
     return _export_excel(rows, headers, 'Visites', 'visites')
@@ -762,7 +813,7 @@ def detail_visite_encours(request, pk):
 def export_pdf_visites_encours(request):
     items = _encours_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '-']
             for i, v in enumerate(items)]
     return _export_pdf(rows, headers, 'Visites en cours', 'visites_encours', [0.5, 2, 1.5, 1.5, 1.5])
@@ -772,7 +823,7 @@ def export_pdf_visites_encours(request):
 def export_excel_visites_encours(request):
     items = _encours_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '']
             for i, v in enumerate(items)]
     return _export_excel(rows, headers, 'Visites en cours', 'visites_encours')
@@ -826,7 +877,7 @@ def detail_visite_terminee(request, pk):
 def export_pdf_visites_terminees(request):
     items = _terminees_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '-']
             for i, v in enumerate(items)]
     return _export_pdf(rows, headers, 'Visites terminées', 'visites_terminees', [0.5, 2, 1.5, 1.5, 1.5])
@@ -836,7 +887,7 @@ def export_pdf_visites_terminees(request):
 def export_excel_visites_terminees(request):
     items = _terminees_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '']
             for i, v in enumerate(items)]
     return _export_excel(rows, headers, 'Visites terminées', 'visites_terminees')
@@ -890,7 +941,7 @@ def detail_visite_excedee(request, pk):
 def export_pdf_visites_excedees(request):
     items = _excedees_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '-']
             for i, v in enumerate(items)]
     return _export_pdf(rows, headers, 'Visites excédées', 'visites_excedees', [0.5, 2, 1.5, 1.5, 1.5])
@@ -900,7 +951,7 @@ def export_pdf_visites_excedees(request):
 def export_excel_visites_excedees(request):
     items = _excedees_qs().order_by('-date_visite')
     headers = ['N°', 'Visiteur', 'Type', 'Porte', 'Date visite']
-    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre,
+    rows = [[i + 1, str(v.visiteur), v.type_visite.nom, v.porte_entree.titre if v.porte_entree else '-',
              v.date_visite.strftime('%d/%m/%Y %H:%M') if v.date_visite else '']
             for i, v in enumerate(items)]
     return _export_excel(rows, headers, 'Visites excédées', 'visites_excedees')

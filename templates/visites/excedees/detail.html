@@ -62,7 +62,7 @@
       </div>
       <div class="vexd-field">
         <div class="vexd-field-label">Porte d'entrée</div>
-        <div class="vexd-field-value">{{ item.porte_entree.titre }}</div>
+        <div class="vexd-field-value">{{ item.porte_entree.titre|default:'-' }}</div>
       </div>
       <div class="vexd-field">
         <div class="vexd-field-label">Personnel</div>

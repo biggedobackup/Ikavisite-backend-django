@@ -156,7 +156,7 @@
             </div>
           </td>
           <td style="color:#475569;white-space:nowrap">{% if item.personnel %}{{ item.personnel.prenom }} {{ item.personnel.nom }}{% else %}-{% endif %}</td>
-          <td style="color:#475569;white-space:nowrap">{% if item.personnel.departement %}{{ item.personnel.departement.nom }}{% else %}-{% endif %}</td>
+          <td style="color:#475569;white-space:nowrap">{% if item.departement %}{{ item.departement.nom }}{% elif item.personnel and item.personnel.departement %}{{ item.personnel.departement.nom }}{% else %}-{% endif %}</td>
           <td style="color:#475569;white-space:nowrap">{{ item.type_visite.nom }}</td>
           <td style="color:#475569;min-width:14rem">
             <div><span style="font-weight:900;color:#64748b">Arrivée :</span> {{ item.date_visite|date:'d/m/Y' }} {{ item.heure_arrivee|time:'H:i'|default:'' }}</div>

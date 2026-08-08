@@ -117,19 +117,6 @@
       </div>
     </div>
 
-    <div style="margin-top:1rem;display:grid;grid-template-columns:1fr;gap:1rem">
-      <div>
-        <span class="vva-label" style="text-align:center">Signature d'entrée</span>
-        <div class="vva-canvas-wrap">
-          <canvas id="signatureEntreeCanvas" width="400" height="150"></canvas>
-          <input type="hidden" name="signature_entree_data" id="signatureEntreeData" value="{{ request.POST.signature_entree_data|default:'' }}" />
-          <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.5rem">
-            <button type="button" class="vva-canvas-btn" onclick="clearSignature('entree')">Effacer</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div style="margin-top:2rem">
       <h2 class="vva-section-title">Identité du visiteur</h2>
       <div class="vva-grid" style="margin-top:1.25rem">
@@ -185,14 +172,14 @@
     <div style="margin-top:2rem">
       <h2 class="vva-section-title">Informations de la visite</h2>
       <div class="vva-grid" style="margin-top:1.25rem">
-        <div><label class="vva-label">Personnel visite <span class="vva-required">*</span></label>
-          <select class="vva-select" name="personnel" id="personnelSelect" required onchange="fillDepartement()">
+        <div id="personnelField"><label class="vva-label">Personnel visité <span id="personnelRequired" class="vva-required" style="display:none">*</span> <span id="modeBadge" style="display:inline-flex;border-radius:9999px;padding:.125rem .5rem;font-size:.625rem;font-weight:900;margin-left:.5rem"></span></label>
+          <select class="vva-select" name="personnel" id="personnelSelect" onchange="fillDepartement()">
             <option value="">Selectionner</option>
             {% for p in personnels %}<option value="{{ p.pk }}" data-departement-id="{{ p.departement_id|default:'' }}" {% if request.POST.personnel|stringformat:'s' == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.prenom }} {{ p.nom }}</option>{% endfor %}
           </select>
         </div>
-        <div><label class="vva-label">Departement <span class="vva-required">*</span></label>
-          <select class="vva-select" name="departement" id="departementSelect" required onchange="filterPersonnelByDepartement()">
+        <div><label class="vva-label">Departement</label>
+          <select class="vva-select" name="departement" id="departementSelect" onchange="filterPersonnelByDepartement()">
             <option value="">Selectionner</option>
             {% for d in departements %}<option value="{{ d.pk }}" {% if request.POST.departement|stringformat:'s' == d.pk|stringformat:'s' %}selected{% endif %}>{{ d.nom }}</option>{% endfor %}
           </select>
@@ -203,12 +190,6 @@
             {% for t in types %}<option value="{{ t.pk }}" {% if request.POST.type_visite|stringformat:'s' == t.pk|stringformat:'s' %}selected{% endif %}>{{ t.nom }}</option>{% endfor %}
           </select>
         </div>
-        <div><label class="vva-label">Porte d'entree <span class="vva-required">*</span></label>
-          <select class="vva-select" name="porte_entree" required>
-            <option value="">Selectionner</option>
-            {% for p in portes %}<option value="{{ p.pk }}" {% if request.POST.porte_entree|stringformat:'s' == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.titre }}</option>{% endfor %}
-          </select>
-        </div>
         <div><label class="vva-label">Motif de la visite <span class="vva-required">*</span></label><input class="vva-input" type="text" name="motif" value="{{ request.POST.motif|default:'' }}" placeholder="Réunion, entretien, livraison..." required /></div>
         <div><label class="vva-label">Numero de badge</label><input class="vva-input" type="text" name="numero_badge" value="{{ request.POST.numero_badge|default:'' }}" placeholder="B-001" /></div>
       </div>
@@ -217,7 +198,7 @@
     <div style="margin-top:2rem">
       <h2 class="vva-section-title">Horaires</h2>
       <div class="horaire-grid" style="display:grid;gap:1.25rem;grid-template-columns:1fr 1fr 1fr;margin-top:1.25rem">
-        <div><label class="vva-label">Date et heure d'arrivee <span class="vva-required">*</span></label><input class="vva-input" type="datetime-local" name="arrival_datetime" id="arrivalDatetime" value="{{ request.POST.arrival_datetime|default:'' }}" required onchange="calcDepartPrevu()" /></div>
+        <div><label class="vva-label">Date et heure d'arrivee <span class="vva-required">*</span></label><input class="vva-input" type="datetime-local" name="arrival_datetime" id="arrivalDatetime" value="{{ request.POST.arrival_datetime|default:'' }}" required onchange="calcDepartPrevu(); checkVisitMode()" /></div>
         <div><label class="vva-label">Date et heure depart prevue <span class="vva-required">*</span></label><input class="vva-input" type="datetime-local" name="planned_departure_datetime" id="plannedDepartureDatetime" value="{{ request.POST.planned_departure_datetime|default:'' }}" required /></div>
         <div><label class="vva-label">Date et heure de sortie</label><input class="vva-input" type="datetime-local" name="departure_datetime" value="{{ request.POST.departure_datetime|default:'' }}" /></div>
       </div>
@@ -307,48 +288,6 @@ function filterPersonnelByDepartement() {
   calcDepartPrevu();
 })();
 (function() {
-  function setupSignaturePad(canvasId, inputId) {
-    var canvas = document.getElementById(canvasId);
-    canvas.style.width = '100%';
-    canvas.style.height = '150px';
-    canvas.width = canvas.offsetWidth;
-    canvas.height = 150;
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    var saved = document.getElementById(inputId).value;
-    if (saved) {
-      var img = new Image();
-      img.onload = function() { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
-      img.src = saved;
-    }
-    var drawing = false;
-    function getPos(e) {
-      var rect = canvas.getBoundingClientRect();
-      var x, y;
-      if (e.touches) { x = e.touches[0].clientX - rect.left; y = e.touches[0].clientY - rect.top; }
-      else { x = e.clientX - rect.left; y = e.clientY - rect.top; }
-      return { x: x * (canvas.width / rect.width), y: y * (canvas.height / rect.height) };
-    }
-    function startDraw(e) { e.preventDefault(); drawing = true; var pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
-    function draw(e) { e.preventDefault(); if (!drawing) return; var pos = getPos(e); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a'; ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
-    function stopDraw(e) { e.preventDefault(); if (drawing) { drawing = false; document.getElementById(inputId).value = canvas.toDataURL('image/png'); } }
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('mouseleave', stopDraw);
-    canvas.addEventListener('touchstart', startDraw, {passive:false});
-    canvas.addEventListener('touchmove', draw, {passive:false});
-    canvas.addEventListener('touchend', stopDraw, {passive:false});
-  }
-  setupSignaturePad('signatureEntreeCanvas', 'signatureEntreeData');
-  window.clearSignature = function(prefix) {
-    var canvas = document.getElementById('signature' + prefix.charAt(0).toUpperCase() + prefix.slice(1) + 'Canvas');
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    document.getElementById('signature' + prefix.charAt(0).toUpperCase() + prefix.slice(1) + 'Data').value = '';
-  };
   window.previewFile = window.previewFile || function(input, imgId, iconId) {
     if (!input.files || !input.files[0]) return;
     var reader = new FileReader();
@@ -813,6 +752,48 @@ function scanDocument(dataUrl, sourceImgId) {
 function closeScanModal() {
   document.getElementById('scanModal').style.display = 'none';
 }
+
+// ── Vérification mode Hors-Normes / Heures Normales ──
+function checkVisitMode() {
+  var dtInput = document.getElementById('arrivalDatetime');
+  var badge = document.getElementById('modeBadge');
+  var reqSpan = document.getElementById('personnelRequired');
+  var sel = document.getElementById('personnelSelect');
+  var field = document.getElementById('personnelField');
+  if (!dtInput || !dtInput.value) return;
+  var dt = new Date(dtInput.value);
+  if (isNaN(dt.getTime())) return;
+  var dateStr = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+  var heureStr = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+  var url = '/api/visites/check-mode/?date=' + encodeURIComponent(dateStr) + '&heure=' + encodeURIComponent(heureStr);
+  fetch(url, { headers: { 'Accept': 'application/json' } })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.mode === 'HORS_NORMES') {
+        badge.textContent = 'Hors-Normes';
+        badge.style.color = '#fff';
+        badge.style.background = '#dc2626';
+        reqSpan.style.display = 'inline';
+        if (sel) sel.required = true;
+        if (field) field.style.display = 'block';
+      } else {
+        badge.textContent = 'Heures Normales';
+        badge.style.color = '#fff';
+        badge.style.background = '#16a34a';
+        reqSpan.style.display = 'none';
+        if (sel) { sel.required = false; sel.value = ''; }
+        if (field) field.style.display = 'none';
+      }
+    })
+    .catch(function() {
+      badge.textContent = '';
+      badge.style.background = 'transparent';
+      reqSpan.style.display = 'none';
+      if (field) field.style.display = 'block';
+    });
+}
+// Appel initial si une valeur est déjà pré-remplie
+setTimeout(checkVisitMode, 100);
 
 </script>
 {% endblock %}

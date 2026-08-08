@@ -156,3 +156,6 @@ class CreneauSemaine(models.Model):
 
     def __str__(self):
         return f'{self.jour_semaine} {self.heure_debut}-{self.heure_fin}'
+
+
+

@@ -62,7 +62,7 @@
       </div>
       <div class="vecd-field">
         <div class="vecd-field-label">Porte d'entrée</div>
-        <div class="vecd-field-value">{{ item.porte_entree.titre }}</div>
+        <div class="vecd-field-value">{{ item.porte_entree.titre|default:'-' }}</div>
       </div>
       <div class="vecd-field">
         <div class="vecd-field-label">Personnel</div>

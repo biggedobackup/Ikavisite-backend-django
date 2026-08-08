@@ -84,7 +84,7 @@
       </div>
       <div>
         <h2 class="vvd-name">{{ item.visiteur.prenom }} {{ item.visiteur.nom }}</h2>
-        <p class="vvd-sub">{{ item.type_visite.nom }} — {{ item.porte_entree.titre }}</p>
+        <p class="vvd-sub">{{ item.type_visite.nom }} — {{ item.porte_entree.titre|default:'-' }}</p>
         <span class="vvd-badge vvd-badge-{{ item.statut }}">{{ item.statut }}</span>
       </div>
     </div>
@@ -148,11 +148,11 @@
       <div class="vvd-field"><div class="vvd-field-label">ID</div><div class="vvd-field-value">{{ item.pk }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Statut</div><div class="vvd-field-value"><span class="vvd-badge vvd-badge-{{ item.statut }}">{{ item.statut }}</span></div></div>
       <div class="vvd-field"><div class="vvd-field-label">Type de visite</div><div class="vvd-field-value">{{ item.type_visite.nom }}</div></div>
-      <div class="vvd-field"><div class="vvd-field-label">Porte d'entree</div><div class="vvd-field-value">{{ item.porte_entree.titre }}</div></div>
+      <div class="vvd-field"><div class="vvd-field-label">Porte d'entree</div><div class="vvd-field-value">{{ item.porte_entree.titre|default:'-' }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Numero de badge</div><div class="vvd-field-value">{{ item.numero_badge|default:'-' }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Personnel visite</div><div class="vvd-field-value">{% if item.personnel %}{{ item.personnel.prenom }} {{ item.personnel.nom }}{% else %}-{% endif %}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Fonction</div><div class="vvd-field-value">{% if item.personnel %}{{ item.personnel.fonction|default:'-' }}{% else %}-{% endif %}</div></div>
-      <div class="vvd-field"><div class="vvd-field-label">Departement</div><div class="vvd-field-value">{% if item.personnel and item.personnel.departement %}{{ item.personnel.departement.nom }}{% else %}-{% endif %}</div></div>
+      <div class="vvd-field"><div class="vvd-field-label">Departement</div><div class="vvd-field-value">{% if item.departement %}{{ item.departement.nom }}{% elif item.personnel and item.personnel.departement %}{{ item.personnel.departement.nom }}{% else %}-{% endif %}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Date et heure d'arrivee</div><div class="vvd-field-value">{{ item.date_visite|date:'d/m/Y H:i'|default:'-' }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Depart prevu</div><div class="vvd-field-value">{{ item.date_depart_prevue|date:'d/m/Y'|default:'-' }} {{ item.heure_depart_prevue|time:'H:i'|default:'' }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Date et heure de sortie</div><div class="vvd-field-value">{% if item.date_depart %}{{ item.date_depart|date:'d/m/Y' }}{% if item.heure_depart %} {{ item.heure_depart|time:'H:i' }}{% endif %}{% else %}-{% endif %}</div></div>

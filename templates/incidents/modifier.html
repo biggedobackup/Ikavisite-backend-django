@@ -46,36 +46,56 @@
 
     <h2 class="im-section-title">Informations de l'incident</h2>
     <div class="im-grid" style="margin-top:1.25rem">
+      <div class="im-colspan"><label class="im-label">Titre / Objet <span class="im-required">*</span></label>
+        <input class="im-input" type="text" name="titre" placeholder="Intitulé court..." value="{{ item.titre|default:'' }}" required />
+      </div>
       <div><label class="im-label">Type d'incident <span class="im-required">*</span></label>
         <select class="im-select" name="type_incident" required>
           <option value="">Sélectionner</option>
-          {% for val, label in type_incident_choices %}<option value="{{ val }}" {% if item.type_incident == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          {% for ti in type_incident_choices %}<option value="{{ ti.pk }}" {% if item.type_incident_id == ti.pk %}selected{% endif %}>{{ ti.nom }}</option>{% endfor %}
         </select>
       </div>
       <div><label class="im-label">Gravité <span class="im-required">*</span></label>
         <select class="im-select" name="gravite" required>
-          <option value="FAIBLE" {% if item.gravite == 'FAIBLE' %}selected{% endif %}>Faible</option>
-          <option value="MOYENNE" {% if item.gravite == 'MOYENNE' %}selected{% endif %}>Moyenne</option>
-          <option value="ELEVEE" {% if item.gravite == 'ELEVEE' %}selected{% endif %}>Élevée</option>
-          <option value="CRITIQUE" {% if item.gravite == 'CRITIQUE' %}selected{% endif %}>Critique</option>
+          {% for val, label in gravite_choices %}<option value="{{ val }}" {% if item.gravite == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </div>
       <div><label class="im-label">Statut <span class="im-required">*</span></label>
         <select class="im-select" name="statut" required>
-          <option value="OUVERT" {% if item.statut == 'OUVERT' %}selected{% endif %}>Ouvert</option>
-          <option value="EN_COURS" {% if item.statut == 'EN_COURS' %}selected{% endif %}>En cours</option>
-          <option value="RESOLU" {% if item.statut == 'RESOLU' %}selected{% endif %}>Résolu</option>
-          <option value="FERME" {% if item.statut == 'FERME' %}selected{% endif %}>Fermé</option>
+          {% for val, label in statut_choices %}<option value="{{ val }}" {% if item.statut == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </div>
-      <div><label class="im-label">Date de l'incident</label><input class="im-input" type="datetime-local" name="date_incident" value="{{ item.date_incident|date:'Y-m-d\TH:i'|default:'' }}" /></div>
-      <div><label class="im-label">Visite <span class="im-required">*</span></label>
-        <select class="im-select" name="visite" required>
-          <option value="">Sélectionner</option>
+      <div><label class="im-label">Date de l'incident</label><input class="im-input" type="datetime-local" name="date_incident" value="{{ item.date_incident|date:'Y-m-d\\TH:i'|default:'' }}" /></div>
+
+      <h2 class="im-section-title im-colspan" style="margin-top:.5rem">Personne concernée</h2>
+
+      <div><label class="im-label">Visite associée</label>
+        <select class="im-select" name="visite">
+          <option value="">— Aucune (hors visite) —</option>
           {% for v in visites %}<option value="{{ v.pk }}" {% if v.pk == item.visite_id %}selected{% endif %}>{{ v.visiteur.nom|default:'-' }} {{ v.visiteur.prenom|default:'' }} ({{ v.date_visite|date:'d/m/Y'|default:'-' }})</option>{% endfor %}
         </select>
       </div>
-      <div class="im-colspan"><label class="im-label">Motif</label><textarea class="im-textarea" rows="3" name="motif" placeholder="Description détaillée de l'incident...">{{ item.motif|default:'' }}</textarea></div>
+      <div><label class="im-label">Personne (NIP)</label>
+        <select class="im-select" name="personne">
+          <option value="">— Aucune —</option>
+          {% for p in personnes %}<option value="{{ p.pk }}" {% if p.pk == item.personne_id %}selected{% endif %}>{{ p.nom }} {{ p.prenom }} ({{ p.numero_nip|default:'NIP manquant' }})</option>{% endfor %}
+        </select>
+      </div>
+
+      <div class="im-colspan"><label class="im-label">Description détaillée</label><textarea class="im-textarea" rows="3" name="motif" placeholder="Récit factuel...">{{ item.motif|default:'' }}</textarea></div>
+
+      <div class="im-colspan"><label class="im-label">Justification <span class="im-required">*</span> <small style="font-weight:400;color:#94a3b8">(obligatoire si changement de gravité/statut)</small></label>
+        <textarea class="im-textarea" rows="2" name="justification" placeholder="Motif du changement...">{{ request.POST.justification|default:'' }}</textarea></div>
+
+      {% if item.gravite in 'GRAVE,CRITIQUE' or item.statut in 'OUVERT,RESOLU' %}
+      <div class="im-colspan" style="padding:.75rem 1rem;border-radius:.75rem;border:1px solid #fecaca;background:#fef2f2">
+        <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer">
+          <input type="checkbox" name="deactivate_liste_noire" value="on" {% if item.statut == 'CLASSE_SANS_SUITE' %}checked disabled{% endif %}>
+          <div><strong style="font-size:.875rem;color:#991b1b">Désactiver la Liste Noire associée</strong>
+          {% if item.statut == 'CLASSE_SANS_SUITE' %}<p style="font-size:.75rem;color:#b91c1c;margin:.25rem 0 0">Désactivation automatique (classement sans suite)</p>
+          {% else %}<p style="font-size:.75rem;color:#b91c1c;margin:.25rem 0 0">Cochez pour désactiver l'entrée Liste Noire liée à ce NIP</p>{% endif %}</div>
+        </label></div>
+      {% endif %}
     </div>
 
     <div class="im-actions">

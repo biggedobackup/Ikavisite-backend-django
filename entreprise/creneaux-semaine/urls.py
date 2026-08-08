@@ -9,4 +9,8 @@ urlpatterns = [
     path('detail/<int:pk>/', views.detail_creneau, name='detail_creneau'),
     path('modifier/<int:pk>/', views.modifier_creneau, name='modifier_creneau'),
     path('supprimer/<int:pk>/', views.supprimer_creneau, name='supprimer_creneau'),
+    # AJAX
+    path('ajouter/ajax/', views.ajouter_creneau_ajax, name='ajouter_creneau_ajax'),
+    path('supprimer/ajax/', views.supprimer_creneau_ajax, name='supprimer_creneau_ajax'),
+    path('sauvegarder/', views.sauvegarder_config_planning, name='sauvegarder_config_planning'),
 ]

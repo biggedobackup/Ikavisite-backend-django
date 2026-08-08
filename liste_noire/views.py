@@ -207,15 +207,16 @@ def liste_listes_noires(request):
 
 @login_required
 def ajouter_liste_noire(request):
-    types_liste = TypeListeNoire.objects.filter(statut='ACTIF')
+    type_defaut = TypeListeNoire.objects.filter(statut='ACTIF').first()
+    type_liste_noire_id = type_defaut.pk if type_defaut else None
     if request.method == 'POST':
         nom = request.POST.get('nom', '').strip()
         prenom = request.POST.get('prenom', '').strip()
         if not nom or not prenom:
             messages.error(request, 'Le nom et le prénom sont requis.')
-            return render(request, 'liste_noire/listes/ajouter.html', {'types_liste': types_liste})
+            return render(request, 'liste_noire/listes/ajouter.html')
         obj = ListeNoire.objects.create(
-            type_liste_noire_id=request.POST.get('type_liste_noire'),
+            type_liste_noire_id=type_liste_noire_id,
             nom=nom, prenom=prenom,
             motif=request.POST.get('motif', '').strip() or None,
             piece_identite=request.POST.get('piece_identite', '').strip() or None,
@@ -228,7 +229,7 @@ def ajouter_liste_noire(request):
         HistoriqueAction.log(request, action='AJOUT', entite='ListeNoire', entite_id=obj.pk, details=f'Inscrit : {nom} {prenom}')
         messages.success(request, 'Inscription ajoutée avec succès.')
         return redirect('liste_listes_noires')
-    return render(request, 'liste_noire/listes/ajouter.html', {'types_liste': types_liste})
+    return render(request, 'liste_noire/listes/ajouter.html')
 
 
 @login_required
@@ -245,9 +246,7 @@ def detail_liste_noire(request, pk):
 @login_required
 def modifier_liste_noire(request, pk):
     item = get_object_or_404(ListeNoire, pk=pk)
-    types_liste = TypeListeNoire.objects.filter(statut='ACTIF')
     if request.method == 'POST':
-        item.type_liste_noire_id = request.POST.get('type_liste_noire')
         item.nom = request.POST.get('nom', '').strip()
         item.prenom = request.POST.get('prenom', '').strip()
         item.motif = request.POST.get('motif', '').strip() or None
@@ -262,7 +261,7 @@ def modifier_liste_noire(request, pk):
         HistoriqueAction.log(request, action='MODIFICATION', entite='ListeNoire', entite_id=item.pk, details=f'Inscription modifiée : {item.nom} {item.prenom}')
         messages.success(request, 'Inscription modifiée avec succès.')
         return redirect('liste_listes_noires')
-    return render(request, 'liste_noire/listes/modifier.html', {'item': item, 'types_liste': types_liste})
+    return render(request, 'liste_noire/listes/modifier.html', {'item': item})
 
 
 @login_required

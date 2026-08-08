@@ -10,14 +10,13 @@ from visites.models import Visite
 
 
 class Command(BaseCommand):
-    help = 'Passe les visites dépassées en EXCEDE, puis en TERMINE_SYSTEME après 5h'
+    help = 'Passe les visites EN_COURS → EXCEDE quand l heure de fin est dépassée'
 
     def handle(self, *args, **options):
         now = timezone.now()
-        today = now.date()
-        stats = {'excede': 0, 'termine_systeme': 0}
+        stats = {'excede': 0}
 
-        # ── 1. EN_COURS → EXCEDE (heure de fin dépassée) ────────────────
+        # ── EN_COURS → EXCEDE (heure de fin dépassée) ────────────────────
         exc_ids = []
         for v in Visite.objects.filter(
             statut='EN_COURS'
@@ -54,31 +53,6 @@ class Command(BaseCommand):
             )
             stats['excede'] = updated
 
-        # ── 2. EXCEDE → TERMINE_SYSTEME (si 5h en statut EXCEDE) ────────
-        term_ids = []
-        obs_suffix = '\nVisite terminée automatiquement par le système après 5h en statut EXCEDE'
-
-        for v in Visite.objects.filter(statut='EXCEDE').iterator():
-            # updated_at = moment du dernier changement de statut
-            if v.updated_at and now > v.updated_at + timedelta(hours=5):
-                term_ids.append(v.pk)
-
-        if term_ids:
-            count = 0
-            for v in Visite.objects.filter(pk__in=term_ids).iterator():
-                v.observations = (v.observations + obs_suffix) if v.observations else obs_suffix.lstrip()
-                v.statut = 'TERMINE_SYSTEME'
-                v.date_depart = today
-                v.heure_depart = now.time()
-                v.updated_at = now
-                v.save(update_fields=[
-                    'statut', 'observations', 'date_depart',
-                    'heure_depart', 'updated_at',
-                ])
-                count += 1
-            stats['termine_systeme'] = count
-
         self.stdout.write(self.style.SUCCESS(
-            f'EN_COURS → EXCEDE : {stats["excede"]} | '
-            f'EXCEDE → TERMINE_SYSTEME (5h) : {stats["termine_systeme"]}'
+            f'EN_COURS → EXCEDE : {stats["excede"]}'
         ))

@@ -33,12 +33,11 @@
 .ii-table tbody td{padding:1rem 1.25rem;color:#475569;vertical-align:middle}
 .ii-badge{display:inline-flex;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
 .ii-badge-OUVERT{background:#fee2e2;color:#dc2626}
-.ii-badge-EN_COURS{background:#dbeafe;color:#1d4ed8}
 .ii-badge-RESOLU{background:#dcfce7;color:#15803d}
-.ii-badge-FERME{background:#f3f4f6;color:#6b7280}
+.ii-badge-CLASSE_SANS_SUITE{background:#f3f4f6;color:#6b7280}
 .ii-badge-FAIBLE{background:#fef3c7;color:#d97706}
 .ii-badge-MOYENNE{background:#fef3c7;color:#d97706}
-.ii-badge-ELEVEE{background:#fee2e2;color:#dc2626}
+.ii-badge-GRAVE{background:#fee2e2;color:#dc2626}
 .ii-badge-CRITIQUE{background:#fecaca;color:#991b1b}
 .ii-action-group{display:flex;justify-content:flex-end;gap:.375rem}
 .ii-action-btn{display:inline-flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:.5rem;border:1px solid #e2e8f0;color:#64748b;background:#fff;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-decoration:none}
@@ -83,20 +82,19 @@
   </div>
 
   <form class="ii-filters" method="GET" action="{% url 'liste_incidents' %}">
-    <input class="ii-input" type="search" name="q" placeholder="Filtrer par type, motif, visiteur..." value="{{ query }}" />
+    <input class="ii-input" type="search" name="q" placeholder="Filtrer par titre, type, motif, visiteur..." value="{{ query }}" />
     <select class="ii-select" name="gravite" onchange="this.form.submit()">
       <option value="">Toutes les gravités</option>
       <option value="FAIBLE" {% if gravite_filter == 'FAIBLE' %}selected{% endif %}>Faible</option>
       <option value="MOYENNE" {% if gravite_filter == 'MOYENNE' %}selected{% endif %}>Moyenne</option>
-      <option value="ELEVEE" {% if gravite_filter == 'ELEVEE' %}selected{% endif %}>Élevée</option>
+      <option value="GRAVE" {% if gravite_filter == 'GRAVE' %}selected{% endif %}>Grave</option>
       <option value="CRITIQUE" {% if gravite_filter == 'CRITIQUE' %}selected{% endif %}>Critique</option>
     </select>
     <select class="ii-select" name="statut" onchange="this.form.submit()">
       <option value="">Tous les statuts</option>
       <option value="OUVERT" {% if statut_filter == 'OUVERT' %}selected{% endif %}>Ouvert</option>
-      <option value="EN_COURS" {% if statut_filter == 'EN_COURS' %}selected{% endif %}>En cours</option>
       <option value="RESOLU" {% if statut_filter == 'RESOLU' %}selected{% endif %}>Résolu</option>
-      <option value="FERME" {% if statut_filter == 'FERME' %}selected{% endif %}>Fermé</option>
+      <option value="CLASSE_SANS_SUITE" {% if statut_filter == 'CLASSE_SANS_SUITE' %}selected{% endif %}>Classé sans suite</option>
     </select>
     <button type="submit" class="ii-btn-filter">Filtrer</button>
   </form>
@@ -107,8 +105,9 @@
       <thead>
         <tr>
           <th>N°</th>
-          <th>Type d'incident</th>
-          <th>Visiteur</th>
+          <th>Titre</th>
+          <th>Type</th>
+          <th>Personne</th>
           <th>Gravité</th>
           <th>Date</th>
           <th>Statut</th>
@@ -119,11 +118,12 @@
         {% for item in page_obj %}
         <tr>
           <td style="font-weight:900;color:var(--primary)">{{ page_obj.start_index|add:forloop.counter0 }}</td>
-          <td style="font-weight:900;color:#0f172a">{{ item.type_incident }}</td>
-          <td>{% if item.visite and item.visite.visiteur %}{{ item.visite.visiteur.nom }} {{ item.visite.visiteur.prenom }}{% else %}-{% endif %}</td>
-          <td><span class="ii-badge ii-badge-{{ item.gravite }}">{{ item.gravite }}</span></td>
+          <td style="font-weight:900;color:#0f172a;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ item.titre }}">{{ item.titre|default:'-' }}</td>
+          <td>{{ item.type_incident.nom }}</td>
+          <td>{% if item.visite and item.visite.visiteur %}{{ item.visite.visiteur.nom }} {{ item.visite.visiteur.prenom }}{% elif item.personne %}{{ item.personne.nom }} {{ item.personne.prenom }}{% else %}-{% endif %}</td>
+          <td><span class="ii-badge ii-badge-{{ item.gravite }}">{{ item.get_gravite_display }}</span></td>
           <td>{{ item.date_incident|date:'d/m/Y H:i'|default:'-' }}</td>
-          <td><span class="ii-badge ii-badge-{{ item.statut }}">{{ item.statut }}</span></td>
+          <td><span class="ii-badge ii-badge-{{ item.statut }}">{{ item.get_statut_display }}</span></td>
           <td>
             <div class="ii-action-group">
               <a href="{% url 'detail_incident' item.pk %}" class="ii-action-btn" title="Détail">

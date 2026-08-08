@@ -125,22 +125,7 @@
       </div>
     </div>
 
-    <div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-      <div>
-        <span class="vvm-label" style="text-align:center">Signature d'entrée</span>
-        {% if item.signature_entree %}
-        <div style="padding:.5rem;border-radius:.75rem;background:#f8fafc;margin-bottom:.5rem;text-align:center">
-          <img src="{{ item.signature_entree.url }}" alt="Signature entrée" style="max-height:3rem;border-radius:.375rem" />
-        </div>
-        {% endif %}
-        <div class="vvm-canvas-wrap">
-          <canvas id="signatureEntreeCanvas" width="400" height="150"></canvas>
-          <input type="hidden" name="signature_entree_data" id="signatureEntreeData" value="{{ request.POST.signature_entree_data|default:'' }}" />
-          <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.5rem">
-            <button type="button" class="vvm-canvas-btn" onclick="clearSignature('entree')">Effacer</button>
-          </div>
-        </div>
-      </div>
+    <div style="margin-top:1rem;display:grid;gap:1rem">
       <div>
         <span class="vvm-label" style="text-align:center">Signature de sortie</span>
         {% if item.signature_sortie %}
@@ -213,7 +198,7 @@
     <div style="margin-top:2rem">
       <h2 class="vvm-section-title">Informations de la visite</h2>
       <div class="vvm-grid" style="margin-top:1.25rem">
-        <div><label class="vvm-label">Personnel visite</label>
+        <div id="personnelField"><label class="vvm-label">Personnel visite <span id="personnelRequired" class="vvm-required" style="display:none">*</span> <span id="modeBadge" style="display:inline-flex;border-radius:9999px;padding:.125rem .5rem;font-size:.625rem;font-weight:900;margin-left:.5rem;vertical-align:middle"></span></label>
           <select class="vvm-select" name="personnel" id="personnelSelect" onchange="fillDepartement()">
             <option value="">Selectionner</option>
             {% for p in personnels %}<option value="{{ p.pk }}" data-departement-id="{{ p.departement_id|default:'' }}" {% if p.pk == item.personnel_id %}selected{% endif %}>{{ p.prenom }} {{ p.nom }}</option>{% endfor %}
@@ -222,19 +207,13 @@
         <div><label class="vvm-label">Departement</label>
           <select class="vvm-select" name="departement" id="departementSelect" onchange="filterPersonnelByDepartement()">
             <option value="">Selectionner</option>
-            {% for d in departements %}<option value="{{ d.pk }}" {% if d.pk == item.personnel.departement_id %}selected{% endif %}>{{ d.nom }}</option>{% endfor %}
+            {% for d in departements %}<option value="{{ d.pk }}" {% if d.pk|stringformat:'s' == item.departement_id|stringformat:'s' or d.pk == item.personnel.departement_id %}selected{% endif %}>{{ d.nom }}</option>{% endfor %}
           </select>
         </div>
         <div><label class="vvm-label">Type de visite <span class="vvm-required">*</span></label>
           <select class="vvm-select" name="type_visite" required>
             <option value="">Selectionner</option>
             {% for t in types %}<option value="{{ t.pk }}" {% if t.pk == item.type_visite_id %}selected{% endif %}>{{ t.nom }}</option>{% endfor %}
-          </select>
-        </div>
-        <div><label class="vvm-label">Porte d'entree <span class="vvm-required">*</span></label>
-          <select class="vvm-select" name="porte_entree" required>
-            <option value="">Selectionner</option>
-            {% for p in portes %}<option value="{{ p.pk }}" {% if p.pk == item.porte_entree_id %}selected{% endif %}>{{ p.titre }}</option>{% endfor %}
           </select>
         </div>
         <div><label class="vvm-label">Motif de la visite</label><input class="vvm-input" type="text" name="motif" value="{{ item.motif|default:'' }}" placeholder="Reunion, entretien, livraison..." /></div>
@@ -245,7 +224,7 @@
     <div style="margin-top:2rem">
       <h2 class="vvm-section-title">Horaires</h2>
       <div class="horaire-grid" style="display:grid;gap:1.25rem;grid-template-columns:1fr 1fr 1fr;margin-top:1.25rem">
-        <div><label class="vvm-label">Date et heure d'arrivee <span class="vvm-required">*</span></label><input class="vvm-input" type="datetime-local" name="arrival_datetime" value="{{ item.date_visite|date:'Y-m-d' }}T{{ item.date_visite|time:'H:i' }}" required /></div>
+        <div><label class="vvm-label">Date et heure d'arrivee <span class="vvm-required">*</span></label><input class="vvm-input" type="datetime-local" name="arrival_datetime" id="arrivalDatetime" value="{{ item.date_visite|date:'Y-m-d' }}T{{ item.date_visite|time:'H:i' }}" required onchange="checkVisitMode()" /></div>
         <div><label class="vvm-label">Date et heure depart prevue <span class="vvm-required">*</span></label><input class="vvm-input" type="datetime-local" name="planned_departure_datetime" value="{% if item.date_depart_prevue %}{{ item.date_depart_prevue|date:'Y-m-d' }}T{{ item.heure_depart_prevue|time:'H:i' }}{% endif %}" required /></div>
         <div><label class="vvm-label">Date et heure de sortie</label><input class="vvm-input" type="datetime-local" name="departure_datetime" value="{% if item.date_depart %}{{ item.date_depart|date:'Y-m-d' }}T{{ item.heure_depart|time:'H:i' }}{% endif %}" /></div>
       </div>
@@ -340,7 +319,6 @@ function filterPersonnelByDepartement() {
     canvas.addEventListener('touchmove', draw, {passive:false});
     canvas.addEventListener('touchend', stopDraw, {passive:false});
   }
-  setupSignaturePad('signatureEntreeCanvas', 'signatureEntreeData');
   setupSignaturePad('signatureSortieCanvas', 'signatureSortieData');
   window.clearSignature = function(prefix) {
     var name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
@@ -810,6 +788,47 @@ function scanDocument(dataUrl, sourceImgId) {
 function closeScanModal() {
   document.getElementById('scanModal').style.display = 'none';
 }
+
+// ── Vérification mode Hors-Normes / Heures Normales ──
+function checkVisitMode() {
+  var dtInput = document.getElementById('arrivalDatetime');
+  var badge = document.getElementById('modeBadge');
+  var reqSpan = document.getElementById('personnelRequired');
+  var sel = document.getElementById('personnelSelect');
+  var field = document.getElementById('personnelField');
+  if (!dtInput || !dtInput.value) return;
+  var dt = new Date(dtInput.value);
+  if (isNaN(dt.getTime())) return;
+  var dateStr = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+  var heureStr = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+  var url = '/api/visites/check-mode/?date=' + encodeURIComponent(dateStr) + '&heure=' + encodeURIComponent(heureStr);
+  fetch(url, { headers: { 'Accept': 'application/json' } })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.mode === 'HORS_NORMES') {
+        badge.textContent = 'Hors-Normes';
+        badge.style.color = '#fff';
+        badge.style.background = '#dc2626';
+        reqSpan.style.display = 'inline';
+        if (sel) sel.required = true;
+        if (field) field.style.display = 'block';
+      } else {
+        badge.textContent = 'Heures Normales';
+        badge.style.color = '#fff';
+        badge.style.background = '#16a34a';
+        reqSpan.style.display = 'none';
+        if (sel) { sel.required = false; sel.value = ''; }
+        if (field) field.style.display = 'none';
+      }
+    })
+    .catch(function() {
+      badge.textContent = '';
+      badge.style.background = 'transparent';
+      reqSpan.style.display = 'none';
+      if (field) field.style.display = 'block';
+    });
+}
+setTimeout(checkVisitMode, 100);
 
 </script>
 {% endblock %}

@@ -1,11 +1,11 @@
 from io import BytesIO
 from urllib.parse import urlencode
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
@@ -18,15 +18,16 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from alertes_et_notifications.models import Alerte
-from .models import Incident, DetectionIncident, TYPE_INCIDENT_CHOICES
+from .models import Incident, TypeIncident, GRAVITE_CHOICES, STATUT_INCIDENT_CHOICES
 from utilisateurs.models import HistoriqueAction
-from visites.models import Visite
+from visites.models import Visite, Visiteur
 
 
 def _base_ctx():
     return {
-        'visites': Visite.objects.select_related('visiteur')[:100],
-        'type_incident_choices': TYPE_INCIDENT_CHOICES,
+        'type_incident_choices': TypeIncident.objects.filter(actif=True).order_by('ordre', 'nom'),
+        'gravite_choices': GRAVITE_CHOICES,
+        'statut_choices': STATUT_INCIDENT_CHOICES,
     }
 
 
@@ -99,12 +100,13 @@ def liste_incidents(request):
     gravite = request.GET.get('gravite', '')
     statut = request.GET.get('statut', '')
     items = Incident.objects.select_related(
-        'visite__visiteur'
+        'type_incident', 'visite__visiteur', 'personne'
     )
     if query:
         items = items.filter(
-            Q(type_incident__icontains=query) | Q(motif__icontains=query) |
-            Q(visite__visiteur__nom__icontains=query) | Q(visite__visiteur__prenom__icontains=query)
+            Q(titre__icontains=query) | Q(type_incident__nom__icontains=query) | Q(motif__icontains=query) |
+            Q(visite__visiteur__nom__icontains=query) | Q(visite__visiteur__prenom__icontains=query) |
+            Q(personne__nom__icontains=query) | Q(personne__prenom__icontains=query)
         )
     if gravite:
         items = items.filter(gravite=gravite)
@@ -123,67 +125,274 @@ def liste_incidents(request):
 
 
 @login_required
+def recherche_visiteurs_json(request):
+    """Endpoint JSON pour rechercher des visiteurs par nom, prénom, NIP ou numéro de pièce."""
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+    qs = Visiteur.objects.filter(
+        Q(nom__icontains=q) | Q(prenom__icontains=q) |
+        Q(numero_piece__icontains=q) | Q(numero_nip__icontains=q)
+    ).order_by('nom', 'prenom')[:20]
+    results = []
+    for v in qs:
+        label = f"{v.nom} {v.prenom or ''}"
+        pieces = []
+        if v.numero_nip:
+            pieces.append(f"NIP:{v.numero_nip}")
+        if v.numero_piece:
+            pieces.append(f"Pièce:{v.numero_piece}")
+        if pieces:
+            label += f" ({', '.join(pieces)})"
+        results.append({
+            'id': v.pk,
+            'label': label,
+        })
+    return JsonResponse({'results': results})
+
+
+@login_required
 def ajouter_incident(request):
+    visite_preset = request.GET.get('visite') or None
     if request.method == 'POST':
-        type_incident = request.POST.get('type_incident', '').strip()
-        valid_types = [c[0] for c in TYPE_INCIDENT_CHOICES]
-        if not type_incident or type_incident not in valid_types:
+        titre = request.POST.get('titre', '').strip()
+        type_incident_pk = request.POST.get('type_incident', '').strip()
+        if not titre:
+            messages.error(request, 'Le titre / objet de l\'incident est requis.')
+            return render(request, 'incidents/ajouter.html', {**_base_ctx(), 'visite_preset': visite_preset})
+        if not type_incident_pk:
             messages.error(request, 'Le type d\'incident est requis.')
-            return render(request, 'incidents/ajouter.html', _base_ctx())
+            return render(request, 'incidents/ajouter.html', {**_base_ctx(), 'visite_preset': visite_preset})
+        try:
+            type_incident = TypeIncident.objects.get(pk=type_incident_pk, actif=True)
+        except TypeIncident.DoesNotExist:
+            messages.error(request, 'Le type d\'incident sélectionné n\'est pas valide ou est inactif.')
+            return render(request, 'incidents/ajouter.html', {**_base_ctx(), 'visite_preset': visite_preset})
+
+        # La visite vient du paramètre GET (pas du formulaire)
+        visite_id = visite_preset
+        personne_id = request.POST.get('personne') or None
+
+        # Auto-remplir personne depuis la visite si non spécifié manuellement
+        if visite_id and not personne_id:
+            from visites.models import Visite
+            try:
+                v = Visite.objects.only('visiteur_id').get(pk=visite_id)
+                personne_id = v.visiteur_id
+            except Visite.DoesNotExist:
+                pass
+
+        # La personne concernée est obligatoire
+        if not personne_id:
+            messages.error(request, 'La personne concernée par l\'incident est obligatoire. '
+                           'Recherchez une personne par nom, prénom, NIP ou numéro de pièce.')
+            return render(request, 'incidents/ajouter.html', {**_base_ctx(), 'visite_preset': visite_preset})
+
         inc = Incident.objects.create(
+            titre=titre,
             type_incident=type_incident,
             motif=request.POST.get('motif', '').strip() or None,
             date_incident=request.POST.get('date_incident', '').strip() or None,
-            visite_id=request.POST.get('visite') or None,
+            visite_id=visite_id,
+            personne_id=personne_id,
             gravite=request.POST.get('gravite', 'MOYENNE'),
-            statut=request.POST.get('statut', 'OUVERT'),
             created_by=request.user,
         )
-        HistoriqueAction.objects.create(utilisateur=request.user, action='AJOUT', entite='Incident', entite_id=inc.pk)
+        HistoriqueAction.objects.create(utilisateur=request.user, action='AJOUT', entite='Incident', entite_id=inc.pk,
+                                        details=f'Incident créé : {titre} ({inc.get_gravite_display()})')
         nom_visiteur = ''
         if inc.visite and inc.visite.visiteur:
             nom_visiteur = f'{inc.visite.visiteur.prenom} {inc.visite.visiteur.nom}'
+        elif inc.personne:
+            nom_visiteur = f'{inc.personne.prenom} {inc.personne.nom}'
         Alerte.objects.create(
             type='INCIDENT',
             entite_id=inc.pk,
-            message=f"Incident — {nom_visiteur} — {inc.get_type_incident_display()} ({inc.gravite})" if nom_visiteur else f"Incident — {inc.get_type_incident_display()} ({inc.gravite})",
+            message=f"Incident {inc.get_gravite_display()} — {nom_visiteur} — {inc.type_incident.nom}: {titre}" if nom_visiteur else f"Incident {inc.get_gravite_display()} — {inc.type_incident.nom}: {titre}",
         )
         messages.success(request, 'Incident créé avec succès.')
+        # --- Règles métier automatiques (Phase 2) ---
+        visiteur = inc.personne or (inc.visite.visiteur if inc.visite else None)
+        if visiteur:
+            if inc.gravite in ('GRAVE', 'CRITIQUE'):
+                # Auto-création Liste Noire ACTIF
+                from liste_noire.models import ListeNoire, TypeListeNoire
+                typ = TypeListeNoire.objects.filter(
+                    niveau_risque__in=['HAUT', 'ELEVE', 'GRAVE']
+                ).first() or TypeListeNoire.objects.filter(statut='ACTIF').first()
+                if typ is None:
+                    typ = TypeListeNoire.objects.create(
+                        nom='INCIDENT GRAVE',
+                        description='Créé automatiquement depuis un incident GRAVE/CRITIQUE',
+                        niveau_risque='HAUT',
+                        statut='ACTIF',
+                        created_by=request.user,
+                    )
+                ListeNoire.objects.create(
+                    type_liste_noire=typ,
+                    nom=visiteur.nom,
+                    prenom=visiteur.prenom,
+                    motif=f"[Auto] Incident #{inc.pk}: {titre}",
+                    piece_identite=visiteur.piece_identite,
+                    numero_piece=visiteur.numero_piece,
+                    numero_nip=visiteur.numero_nip,
+                    date_debut=timezone.now(),
+                    statut='ACTIF',
+                    created_by=request.user,
+                )
+            elif inc.gravite in ('FAIBLE', 'MOYENNE'):
+                # Drapeau d'avertissement (vigilance accrue)
+                visiteur.flag_avertissement = True
+                visiteur.save(update_fields=['flag_avertissement'])
         return redirect('liste_incidents')
-    return render(request, 'incidents/ajouter.html', _base_ctx())
+    ctx = _base_ctx()
+    ctx['visite_preset'] = visite_preset
+    if visite_preset:
+        from visites.models import Visite
+        try:
+            v = Visite.objects.select_related('visiteur').get(pk=visite_preset)
+            ctx['visite_preset_info'] = {
+                'personne_id': v.visiteur_id,
+                'personne_nom': f"{v.visiteur.prenom} {v.visiteur.nom}",
+            }
+        except Visite.DoesNotExist:
+            pass
+    # Support ?personne=XX pour préremplir depuis la liste des visiteurs
+    personne_preset = request.GET.get('personne') or None
+    if personne_preset and not ctx.get('visite_preset_info'):
+        from visites.models import Visiteur
+        try:
+            p = Visiteur.objects.get(pk=personne_preset)
+            ctx['visite_preset_info'] = {
+                'personne_id': p.pk,
+                'personne_nom': f"{p.prenom} {p.nom}",
+            }
+        except Visiteur.DoesNotExist:
+            pass
+    return render(request, 'incidents/ajouter.html', ctx)
 
 
 @login_required
 def detail_incident(request, pk):
     item = get_object_or_404(
         Incident.objects.select_related(
-            'visite__visiteur', 'created_by', 'updated_by'
+            'type_incident', 'visite__visiteur', 'personne', 'created_by', 'updated_by'
         ),
         pk=pk
     )
-    return render(request, 'incidents/detail.html', {'item': item})
+    historique = HistoriqueAction.objects.filter(
+        entite='Incident', entite_id=item.pk
+    ).order_by('-created_at')[:10]
+    # Liste Noire associée
+    visiteur = item.personne or (item.visite.visiteur if item.visite else None)
+    liste_noire_entries = []
+    if visiteur and visiteur.numero_nip:
+        from liste_noire.models import ListeNoire
+        liste_noire_entries = ListeNoire.objects.filter(
+            numero_nip=visiteur.numero_nip
+        ).order_by('-date_debut')
+    return render(request, 'incidents/detail.html', {
+        'item': item, 'historique': historique, 'liste_noire_entries': liste_noire_entries,
+        **_base_ctx(),
+    })
 
 
 @login_required
 def modifier_incident(request, pk):
     item = get_object_or_404(Incident, pk=pk)
     if request.method == 'POST':
-        type_incident = request.POST.get('type_incident', '').strip()
-        valid_types = [c[0] for c in TYPE_INCIDENT_CHOICES]
-        if not type_incident or type_incident not in valid_types:
+        type_incident_pk = request.POST.get('type_incident', '').strip()
+        titre = request.POST.get('titre', '').strip()
+        if not titre:
+            messages.error(request, 'Le titre / objet de l\'incident est requis.')
+            return render(request, 'incidents/modifier.html', {'item': item, **_base_ctx()})
+        if not type_incident_pk:
             messages.error(request, 'Le type d\'incident est requis.')
             return render(request, 'incidents/modifier.html', {'item': item, **_base_ctx()})
+        try:
+            type_incident = TypeIncident.objects.get(pk=type_incident_pk, actif=True)
+        except TypeIncident.DoesNotExist:
+            messages.error(request, 'Le type d\'incident sélectionné n\'est pas valide.')
+            return render(request, 'incidents/modifier.html', {'item': item, **_base_ctx()})
+
+        old_gravite = item.gravite
+        old_statut = item.statut
+        new_gravite = request.POST.get('gravite', 'MOYENNE')
+        new_statut = request.POST.get('statut', 'OUVERT')
+        justification = request.POST.get('justification', '').strip()
+
+        # Si gravité ou statut change → justification obligatoire
+        gravite_changed = old_gravite != new_gravite
+        statut_changed = old_statut != new_statut
+        if (gravite_changed or statut_changed) and not justification:
+            messages.error(request, 'Une justification est obligatoire pour modifier la gravité ou le statut.')
+            return render(request, 'incidents/modifier.html', {'item': item, **_base_ctx()})
+
+        item.titre = titre
         item.type_incident = type_incident
         item.motif = request.POST.get('motif', '').strip() or None
         item.date_incident = request.POST.get('date_incident', '').strip() or None
         item.visite_id = request.POST.get('visite') or None
-        item.gravite = request.POST.get('gravite', 'MOYENNE')
-        item.statut = request.POST.get('statut', 'OUVERT')
+        item.personne_id = request.POST.get('personne') or None
+        item.gravite = new_gravite
+        item.statut = new_statut
+        item.justification = justification or None
         item.updated_by = request.user
         item.save()
-        HistoriqueAction.objects.create(utilisateur=request.user, action='MODIFICATION', entite='Incident', entite_id=item.pk)
+
+        # Piste d'audit détaillée
+        changes = []
+        if gravite_changed:
+            changes.append(f'Gravité : {old_gravite} → {new_gravite}')
+        if statut_changed:
+            changes.append(f'Statut : {old_statut} → {new_statut}')
+        if justification:
+            changes.append(f'Justification : {justification}')
+        HistoriqueAction.objects.create(
+            utilisateur=request.user, action='MODIFICATION', entite='Incident', entite_id=item.pk,
+            details=f'Incident modifié : {titre} | {" | ".join(changes)}'
+        )
+
+        # Désactivation automatique de la ListeNoire si requalification
+        visiteur = item.personne or (item.visite.visiteur if item.visite else None)
+        deactivate_ln = request.POST.get('deactivate_liste_noire') == 'on'
+        if deactivate_ln and visiteur and visiteur.numero_nip:
+            from liste_noire.models import ListeNoire
+            ln_entries = ListeNoire.objects.filter(
+                numero_nip=visiteur.numero_nip, statut='ACTIF'
+            )
+            for ln in ln_entries:
+                ln.statut = 'INACTIF'
+                ln.date_fin = timezone.now()
+                ln.save(update_fields=['statut', 'date_fin'])
+                HistoriqueAction.objects.create(
+                    utilisateur=request.user, action='DESACTIVATION', entite='ListeNoire',
+                    entite_id=ln.pk,
+                    details=f'Désactivé suite à requalification de l\'incident #{item.pk} : {justification}'
+                )
+            if ln_entries.exists():
+                messages.success(request, f'{ln_entries.count()} entrée(s) Liste Noire désactivée(s).')
+
+        # Si classé sans suite → désactiver la ListeNoire automatiquement
+        if new_statut == 'CLASSE_SANS_SUITE' and visiteur and visiteur.numero_nip:
+            from liste_noire.models import ListeNoire
+            ln_auto = ListeNoire.objects.filter(
+                numero_nip=visiteur.numero_nip, statut='ACTIF'
+            )
+            for ln in ln_auto:
+                ln.statut = 'INACTIF'
+                ln.date_fin = timezone.now()
+                ln.save(update_fields=['statut', 'date_fin'])
+                HistoriqueAction.objects.create(
+                    utilisateur=request.user, action='DESACTIVATION', entite='ListeNoire',
+                    entite_id=ln.pk,
+                    details=f'Désactivé automatiquement car incident #{item.pk} classé sans suite : {justification}'
+                )
+            if ln_auto.exists():
+                messages.success(request, f'{ln_auto.count()} entrée(s) Liste Noire désactivée(s) automatiquement (classement sans suite).')
+
         messages.success(request, 'Incident modifié avec succès.')
-        return redirect('liste_incidents')
+        return redirect('detail_incident', pk=item.pk)
     return render(request, 'incidents/modifier.html', {'item': item, **_base_ctx()})
 
 
@@ -198,54 +407,159 @@ def supprimer_incident(request, pk):
     return render(request, 'incidents/detail.html', {'item': item, 'confirm_delete': True})
 
 
-@login_required
-def detection_incidents(request):
-    items = DetectionIncident.objects.select_related(
-        'incident__visite__visiteur'
-    ).order_by('-created_at')
-    paginator = Paginator(items, 10)
-    page_obj = paginator.get_page(request.GET.get('page', 1))
-    page_links = paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
-    return render(request, 'incidents/detection.html', {
-        'page_obj': page_obj, 'page_links': page_links,
-    })
-
 
 @login_required
 def fermer_incident(request, pk):
     item = get_object_or_404(Incident, pk=pk)
     if request.method == 'POST':
-        item.statut = 'FERME'
+        item.statut = 'RESOLU'
         item.updated_by = request.user
         item.save()
-        HistoriqueAction.objects.create(utilisateur=request.user, action='MODIFICATION', entite='Incident', entite_id=item.pk)
-        messages.success(request, 'Incident fermé avec succès.')
-    return redirect('detection_incidents')
+        HistoriqueAction.objects.create(utilisateur=request.user, action='MODIFICATION', entite='Incident', entite_id=item.pk,
+                                        details='Incident résolu')
+        messages.success(request, 'Incident résolu avec succès.')
+    return redirect('liste_incidents')
 
 
 @login_required
 def export_pdf_incidents(request):
     items = Incident.objects.select_related(
-        'visite__visiteur'
+        'type_incident', 'visite__visiteur', 'personne'
     ).order_by('-created_at')
-    headers = ['N°', 'Type', 'Gravité', 'Visiteur', 'Statut', 'Date']
-    rows = [[i + 1, inc.type_incident, inc.gravite,
-             str(inc.visite.visiteur) if inc.visite and inc.visite.visiteur else '-',
-             inc.statut,
+    headers = ['N°', 'Titre', 'Type', 'Gravité', 'Personne', 'Statut', 'Date']
+    rows = [[i + 1, inc.titre, inc.type_incident.nom if inc.type_incident else '-', inc.get_gravite_display(),
+             str(inc.visite.visiteur) if inc.visite and inc.visite.visiteur else (str(inc.personne) if inc.personne else '-'),
+             inc.get_statut_display(),
              inc.date_incident.strftime('%d/%m/%Y %H:%M') if inc.date_incident else '-']
             for i, inc in enumerate(items)]
-    return _export_pdf(rows, headers, 'Liste des incidents', 'incidents', [0.5, 2, 1, 2, 1, 1.5])
+    return _export_pdf(rows, headers, 'Liste des incidents', 'incidents', [0.5, 2, 1.5, 1, 2, 1, 1.5])
 
 
 @login_required
 def export_excel_incidents(request):
     items = Incident.objects.select_related(
-        'visite__visiteur'
+        'type_incident', 'visite__visiteur', 'personne'
     ).order_by('-created_at')
-    headers = ['N°', 'Type', 'Gravité', 'Visiteur', 'Statut', 'Date']
-    rows = [[i + 1, inc.type_incident, inc.gravite,
-             str(inc.visite.visiteur) if inc.visite and inc.visite.visiteur else '',
-             inc.statut,
+    headers = ['N°', 'Titre', 'Type', 'Gravité', 'Personne', 'Statut', 'Date']
+    rows = [[i + 1, inc.titre, inc.type_incident.nom if inc.type_incident else '-', inc.get_gravite_display(),
+             str(inc.visite.visiteur) if inc.visite and inc.visite.visiteur else (str(inc.personne) if inc.personne else ''),
+             inc.get_statut_display(),
              inc.date_incident.strftime('%d/%m/%Y %H:%M') if inc.date_incident else '']
             for i, inc in enumerate(items)]
     return _export_excel(rows, headers, 'Incidents', 'incidents')
+
+
+# ─── Types d'incident (CRUD) ────────────────────────────────────────────────
+
+
+@login_required
+@permission_required('incidents.view_typeincident', raise_exception=True)
+def liste_types_incident(request):
+    query = request.GET.get('q', '').strip()
+    items = TypeIncident.objects.all()
+    if query:
+        items = items.filter(
+            Q(nom__icontains=query) | Q(description__icontains=query)
+        )
+    items = items.order_by('ordre', 'nom')
+    paginator = Paginator(items, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    page_links = paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+    return render(request, 'incidents/types/liste.html', {
+        'page_obj': page_obj,
+        'page_links': page_links,
+        'query': query,
+        'gravite_choices': GRAVITE_CHOICES,
+    })
+
+
+@login_required
+@permission_required('incidents.add_typeincident', raise_exception=True)
+def ajouter_type_incident(request):
+    if request.method == 'POST':
+        nom = request.POST.get('nom', '').strip()
+        if not nom:
+            messages.error(request, "Le nom du type d'incident est requis.")
+            return render(request, 'incidents/types/ajouter.html', {
+                'gravite_choices': GRAVITE_CHOICES,
+            })
+        if TypeIncident.objects.filter(nom__iexact=nom).exists():
+            messages.error(request, "Ce nom de type d'incident existe déjà.")
+            return render(request, 'incidents/types/ajouter.html', {
+                'gravite_choices': GRAVITE_CHOICES,
+            })
+        obj = TypeIncident.objects.create(
+            nom=nom,
+            description=request.POST.get('description', '').strip() or None,
+            gravite_defaut=request.POST.get('gravite_defaut', 'MOYENNE'),
+            actif=request.POST.get('actif') == 'on',
+        )
+        HistoriqueAction.objects.create(
+            utilisateur=request.user, action='AJOUT', entite='TypeIncident',
+            entite_id=obj.pk,
+            details=f"Type d'incident créé : {obj.nom} (gravité par défaut : {obj.get_gravite_defaut_display()})"
+        )
+        messages.success(request, "Type d'incident créé avec succès.")
+        return redirect('liste_types_incident')
+    return render(request, 'incidents/types/ajouter.html', {
+        'gravite_choices': GRAVITE_CHOICES,
+    })
+
+
+@login_required
+@permission_required('incidents.change_typeincident', raise_exception=True)
+def modifier_type_incident(request, pk):
+    item = get_object_or_404(TypeIncident, pk=pk)
+    if request.method == 'POST':
+        nom = request.POST.get('nom', '').strip()
+        if not nom:
+            messages.error(request, "Le nom du type d'incident est requis.")
+            return render(request, 'incidents/types/modifier.html', {
+                'item': item, 'gravite_choices': GRAVITE_CHOICES,
+            })
+        if TypeIncident.objects.filter(nom__iexact=nom).exclude(pk=item.pk).exists():
+            messages.error(request, "Ce nom de type d'incident existe déjà.")
+            return render(request, 'incidents/types/modifier.html', {
+                'item': item, 'gravite_choices': GRAVITE_CHOICES,
+            })
+        old_nom = item.nom
+        item.nom = nom
+        item.description = request.POST.get('description', '').strip() or None
+        item.gravite_defaut = request.POST.get('gravite_defaut', 'MOYENNE')
+        item.actif = request.POST.get('actif') == 'on'
+        item.save()
+        HistoriqueAction.objects.create(
+            utilisateur=request.user, action='MODIFICATION', entite='TypeIncident',
+            entite_id=item.pk,
+            details=f"Type d'incident modifié : {old_nom} → {item.nom} (gravité : {item.get_gravite_defaut_display()})"
+        )
+        messages.success(request, "Type d'incident modifié avec succès.")
+        return redirect('liste_types_incident')
+    return render(request, 'incidents/types/modifier.html', {
+        'item': item, 'gravite_choices': GRAVITE_CHOICES,
+    })
+
+
+@login_required
+@permission_required('incidents.delete_typeincident', raise_exception=True)
+def supprimer_type_incident(request, pk):
+    item = get_object_or_404(TypeIncident, pk=pk)
+    if request.method == 'POST':
+        # Vérifier si des incidents utilisent ce type
+        if Incident.objects.filter(type_incident=item).exists():
+            messages.error(
+                request,
+                "Impossible de supprimer ce type d'incident car il est utilisé par des incidents."
+            )
+            return redirect('liste_types_incident')
+        nom = item.nom
+        item.delete()
+        HistoriqueAction.objects.create(
+            utilisateur=request.user, action='SUPPRESSION', entite='TypeIncident',
+            entite_id=pk,
+            details=f"Type d'incident supprimé : {nom}"
+        )
+        messages.success(request, "Type d'incident supprimé avec succès.")
+        return redirect('liste_types_incident')
+    # GET non autorisé
+    return redirect('liste_types_incident')

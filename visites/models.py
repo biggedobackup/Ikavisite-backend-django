@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from core.compress_image import CompressedImageField
-from entreprise.models import CreneauSemaine
 
 GENRE_CHOICES = [
     ('Homme', 'Homme'),
@@ -62,6 +61,7 @@ class Visiteur(models.Model):
     document_recto = CompressedImageField(upload_to='visiteurs/', null=True, blank=True)
     document_verso = CompressedImageField(upload_to='visiteurs/', null=True, blank=True)
     statut = models.CharField(max_length=50, default='ACTIF')
+    flag_avertissement = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     created_by = models.ForeignKey(
@@ -130,11 +130,15 @@ class Visite(models.Model):
     genre = models.CharField(max_length=50, choices=GENRE_CHOICES, null=True, blank=True)
     porte_entree = models.ForeignKey(
         'entreprise.PorteEntree', on_delete=models.CASCADE,
-        db_column='id_porte_entree'
+        null=True, blank=True, db_column='id_porte_entree'
     )
     personnel = models.ForeignKey(
         'entreprise.Personnel', on_delete=models.SET_NULL,
         null=True, blank=True, db_column='id_employe'
+    )
+    departement = models.ForeignKey(
+        'entreprise.Departement', on_delete=models.SET_NULL,
+        null=True, blank=True, db_column='id_departement'
     )
     date_visite = models.DateTimeField(null=True, blank=True)
     heure_arrivee = models.TimeField(null=True, blank=True)
@@ -169,16 +173,25 @@ class Visite(models.Model):
                 errs['personnel'] = 'Ce personnel est inactif'
             elif self.personnel.departement_id and self.personnel.departement.statut != 'ACTIF':
                 errs['personnel'] = 'Le département de ce personnel est inactif'
-        if self.date_visite and self.heure_arrivee:
-            jour = ['LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE'][self.date_visite.weekday()]
-            if not CreneauSemaine.objects.filter(
-                jour_semaine=jour, statut='ACTIF',
-                heure_debut__lte=self.heure_arrivee,
-                heure_fin__gte=self.heure_arrivee,
-            ).exists():
-                errs['date_visite'] = f'Aucun créneau actif pour {jour} à {self.heure_arrivee}'
         if errs:
             raise ValidationError(errs)
+
+    @property
+    def visit_mode(self):
+        """
+        Détermine le mode de la visite : MODE_HEURES_NORMALES ou MODE_HORS_NORMES.
+        Appelle determine_visit_mode() du module entreprise.
+        """
+        from entreprise.utils import determine_visit_mode
+        if self.date_visite and self.heure_arrivee:
+            return determine_visit_mode(self.date_visite, self.heure_arrivee)
+        return None
+
+    @property
+    def personnel_required(self):
+        """True si le champ 'Personne visitée' est obligatoire pour cette visite."""
+        from entreprise.utils import MODE_HORS_NORMES
+        return self.visit_mode == MODE_HORS_NORMES
 
     class Meta:
         db_table = 'visites'

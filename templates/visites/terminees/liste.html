@@ -106,7 +106,7 @@
             </div>
           </td>
           <td>{{ item.type_visite.nom }}</td>
-          <td>{{ item.porte_entree.titre }}</td>
+          <td>{{ item.porte_entree.titre|default:'-' }}</td>
           <td style="white-space:nowrap">{{ item.date_visite|date:'d/m/Y' }}</td>
           <td>
             <div class="vtm-action-group">

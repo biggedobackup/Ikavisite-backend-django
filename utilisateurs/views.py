@@ -224,8 +224,7 @@ def modifier_utilisateur(request, pk):
         item.porte_entree = porte_entree
         item.statut = request.POST.get('statut', 'ACTIF')
         item.is_active = (item.statut == 'ACTIF')
-        item.is_staff = False
-        item.is_superuser = False
+        # is_staff et is_superuser conservés (pas de champ dans le formulaire)
 
         new_password = request.POST.get('new_password', '')
         if new_password:

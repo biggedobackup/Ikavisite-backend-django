@@ -16,6 +16,7 @@
 .rold-badge{display:inline-flex;margin-top:.25rem;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900;background:var(--primary-light);color:var(--primary)}
 .rold-section-title{font-size:1rem;font-weight:900;color:#0f172a;margin-top:2rem;margin-bottom:.75rem}
 .rold-perms{display:flex;flex-wrap:wrap;gap:.5rem}
+.rold-perms details[open] .summary-chevron{transform:rotate(90deg)}
 .rold-perm-tag{display:inline-flex;border-radius:.5rem;padding:.25rem .75rem;font-size:.75rem;font-weight:600;background:#f1f5f9;color:#475569}
 .rold-table{width:100%;border-collapse:collapse;font-size:.875rem}
 .rold-table thead th{text-align:left;padding:.75rem 1rem;font-weight:900;color:var(--primary);background:var(--primary-light);white-space:nowrap}
@@ -42,12 +43,24 @@
     <h2 class="rold-name">{{ group.name }}</h2>
     <span class="rold-badge">{{ group.user_set.count }} utilisateur(s)</span>
 
-    <h3 class="rold-section-title">Permissions ({{ perms_fr|length }})</h3>
+    <h3 class="rold-section-title">Permissions <span class="rold-badge" style="position:relative;top:-0.1em">{{ perms_fr|length }}</span></h3>
     <div class="rold-perms">
-      {% for perm in perms_fr %}
-      <span class="rold-perm-tag">{{ perm.name }}</span>
+      {% regroup perms_fr by app_label as perm_groups %}
+      {% for pgroup in perm_groups %}
+      <details{% if forloop.first %} open{% endif %} style="border:1px solid #f1f5f9;border-radius:.75rem;background:#fff;width:100%">
+        <summary style="cursor:pointer;padding:.625rem 1rem;font-size:.8125rem;font-weight:900;color:var(--primary);display:flex;align-items:center;gap:.5rem;user-select:none;background:var(--primary-light);border-radius:.75rem;transition:background .15s;">
+          <svg class="summary-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1rem;height:1rem;transition:transform .2s"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          {{ pgroup.grouper|title }}
+          <span style="margin-left:auto;font-size:.6875rem;font-weight:700;background:#fff;color:var(--primary);border-radius:9999px;padding:.125rem .625rem">{{ pgroup.list|length }}</span>
+        </summary>
+        <div style="display:flex;flex-wrap:wrap;gap:.375rem;padding:.75rem 1rem">
+          {% for perm in pgroup.list %}
+          <span style="display:inline-flex;border-radius:.5rem;padding:.2rem .625rem;font-size:.75rem;font-weight:600;background:#f1f5f9;color:#475569">{{ perm.name }}</span>
+          {% endfor %}
+        </div>
+      </details>
       {% empty %}
-      <p style="font-size:.875rem;color:#94a3b8">Aucune permission associée.</p>
+      <p style="font-size:.875rem;color:#94a3b8;padding:.5rem 0">Aucune permission associée.</p>
       {% endfor %}
     </div>
 

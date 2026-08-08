@@ -126,11 +126,13 @@ class VisiteOut(Schema):
     type_visite_id: int
     visiteur: VisiteurOut
     visiteur_id: int
+    porte_entree: Optional[PorteEntreeResumeOut] = None
+    porte_entree_id: Optional[int] = None
     genre: Optional[str] = None
-    porte_entree: PorteEntreeResumeOut
-    porte_entree_id: int
     personnel: Optional[PersonnelResumeOut] = None
     personnel_id: Optional[int] = None
+    departement: Optional[str] = None
+    departement_id: Optional[int] = None
     date_visite: Optional[str] = None
     heure_arrivee: Optional[str] = None
     date_depart_prevue: Optional[str] = None
@@ -184,6 +186,10 @@ class VisiteOut(Schema):
         dt = obj.heure_fin_prevue_dt
         return dt.isoformat() if dt else None
     @staticmethod
+    def resolve_departement(obj): return obj.departement.nom if obj.departement else None
+    @staticmethod
+    def resolve_departement_id(obj): return obj.departement_id
+    @staticmethod
     def resolve_est_excedee(obj): return obj.est_excedee
     @staticmethod
     def resolve_duree_max_minutes(obj): return obj.duree_max_minutes
@@ -211,8 +217,9 @@ class VisiteCreateIn(Schema):
     v_date_delivrance: Optional[str] = None
     # Visite
     type_visite_id: int
-    porte_entree_id: int
+    porte_entree_id: Optional[int] = None
     personnel_id: Optional[int] = None
+    departement_id: Optional[int] = None
     genre: Optional[str] = None
     date_visite: Optional[str] = None          # ISO datetime
     heure_arrivee: Optional[str] = None        # HH:MM
@@ -236,6 +243,7 @@ class VisiteUpdateIn(Schema):
     visiteur_id: Optional[int] = None
     porte_entree_id: Optional[int] = None
     personnel_id: Optional[int] = None
+    departement_id: Optional[int] = None
     genre: Optional[str] = None
     date_visite: Optional[str] = None
     heure_arrivee: Optional[str] = None
@@ -554,16 +562,34 @@ def api_create_visite(request, payload: VisiteCreateIn):
     except TypeVisite.DoesNotExist:
         raise HttpError(404, "Type de visite introuvable")
 
-    try:
-        PorteEntree.objects.get(id=payload.porte_entree_id)
-    except PorteEntree.DoesNotExist:
-        raise HttpError(404, "Porte d'entrée introuvable")
+    if payload.porte_entree_id:
+        try:
+            PorteEntree.objects.get(id=payload.porte_entree_id)
+        except PorteEntree.DoesNotExist:
+            raise HttpError(404, "Porte d'entrée introuvable")
 
     if payload.personnel_id:
         try:
             Personnel.objects.get(id=payload.personnel_id)
         except Personnel.DoesNotExist:
             raise HttpError(404, "Employé introuvable")
+
+    # Valider le champ "Personne visitée" selon le mode (Hors-Normes / Heures Normales)
+    if not payload.personnel_id:
+        dt_check = payload.date_visite
+        hr_check = payload.heure_arrivee
+        if dt_check and hr_check:
+            try:
+                from entreprise.utils import determine_visit_mode, MODE_HORS_NORMES
+                d = datetime.fromisoformat(dt_check).date() if isinstance(dt_check, str) else dt_check
+                h = _parse_time(hr_check) if isinstance(hr_check, str) else hr_check
+                mode = determine_visit_mode(d, h)
+                if mode == MODE_HORS_NORMES:
+                    raise HttpError(400, "En période Hors-Normes, le champ 'Personne visitée' est obligatoire")
+            except HttpError:
+                raise
+            except Exception:
+                pass  # Si erreur de parsing, on laisse passer
 
     # Parser les dates/heures
     dt = None
@@ -824,3 +850,49 @@ def api_list_visites_excedees(
     if aujourdhui:
         qs = qs.filter(date_visite__date=timezone.now().date())
     return qs.order_by('-date_visite', '-id')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHECK MODE (Hors-Normes / Heures Normales)  GET /api/visites/check-mode
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class CheckModeOut(Schema):
+    mode: str
+    personnel_required: bool
+    label: str
+
+
+@router.get("/check-mode/", response=CheckModeOut, auth=None, url_name="api_check_mode")
+def api_check_mode(request):
+    """
+    Vérifie si une date/heure donnée est en mode Hors-Normes ou Heures Normales.
+    Utilisé par le frontend pour rendre le champ 'Personne visitée' obligatoire/optionnel.
+
+    Paramètres : date (YYYY-MM-DD), heure (HH:MM)
+    Si omis, utilise l'instant présent.
+    """
+    date_str = request.GET.get("date")
+    heure_str = request.GET.get("heure")
+
+    if not date_str or not heure_str:
+        date_today = timezone.now().date()
+        heure_now = timezone.now().time()
+        d = date_today
+        h = time(heure_now.hour, heure_now.minute)
+    else:
+        try:
+            d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            raise HttpError(400, "Format date invalide (YYYY-MM-DD)")
+        try:
+            h = datetime.strptime(heure_str, "%H:%M").time()
+        except ValueError:
+            raise HttpError(400, "Format heure invalide (HH:MM)")
+
+    from entreprise.utils import determine_visit_mode, MODE_HEURES_NORMALES, MODE_HORS_NORMES
+    mode = determine_visit_mode(d, h)
+    return {
+        "mode": mode,
+        "personnel_required": mode == MODE_HORS_NORMES,
+        "label": "Heures Normales" if mode == MODE_HEURES_NORMALES else "Hors-Normes",
+    }

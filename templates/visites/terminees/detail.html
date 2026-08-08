@@ -62,7 +62,7 @@
       </div>
       <div class="vtmd-field">
         <div class="vtmd-field-label">Porte d'entrée</div>
-        <div class="vtmd-field-value">{{ item.porte_entree.titre }}</div>
+        <div class="vtmd-field-value">{{ item.porte_entree.titre|default:'-' }}</div>
       </div>
       <div class="vtmd-field">
         <div class="vtmd-field-label">Personnel</div>

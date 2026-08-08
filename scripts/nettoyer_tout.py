@@ -19,7 +19,7 @@ from django.utils import timezone
 # Modèles
 from visites.models import Visite, Visiteur, TypeVisite
 from liste_noire.models import ListeNoire, TypeListeNoire, DetectionListeNoire
-from incidents.models import Incident, DetectionIncident
+from incidents.models import Incident
 from objets_oublies.models import ObjetOublie, DetectionObjetOublie
 from alertes_et_notifications.models import Alerte
 from utilisateurs.models import HistoriqueAction
@@ -32,7 +32,6 @@ def compter():
         'Visiteurs': Visiteur.objects.count(),
         'Types de visite': TypeVisite.objects.count(),
         'Incidents': Incident.objects.count(),
-        'Détections incident': DetectionIncident.objects.count(),
         'Objets oubliés': ObjetOublie.objects.count(),
         'Détections objets oubliés': DetectionObjetOublie.objects.count(),
         'Listes noires': ListeNoire.objects.count(),
@@ -50,9 +49,7 @@ def nettoyer():
         Alerte.objects.all().delete()
         HistoriqueAction.objects.all().delete()
 
-        # 2. Détections incident → Incident
-        print("Suppression des détections d'incident...")
-        DetectionIncident.objects.all().delete()
+        # 2. Incident
         print("Suppression des incidents...")
         Incident.objects.all().delete()
 

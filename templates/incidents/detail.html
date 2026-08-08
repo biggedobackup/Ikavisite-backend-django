@@ -26,12 +26,11 @@
 .id-field-full{grid-column:1/-1}
 .id-badge{display:inline-flex;border-radius:9999px;padding:.25rem .75rem;font-size:.6875rem;font-weight:900}
 .id-badge-OUVERT{background:#fee2e2;color:#dc2626}
-.id-badge-EN_COURS{background:#dbeafe;color:#1d4ed8}
 .id-badge-RESOLU{background:#dcfce7;color:#15803d}
-.id-badge-FERME{background:#f3f4f6;color:#6b7280}
+.id-badge-CLASSE_SANS_SUITE{background:#f3f4f6;color:#6b7280}
 .id-badge-FAIBLE{background:#fef3c7;color:#d97706}
 .id-badge-MOYENNE{background:#fef3c7;color:#d97706}
-.id-badge-ELEVEE{background:#fee2e2;color:#dc2626}
+.id-badge-GRAVE{background:#fee2e2;color:#dc2626}
 .id-badge-CRITIQUE{background:#fecaca;color:#991b1b}
 .id-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #f1f5f9}
 </style>
@@ -49,17 +48,23 @@
   <section class="id-card">
     <h2 class="id-section-title">Incident</h2>
     <div class="id-grid id-grid-3">
-      <div class="id-field"><div class="id-field-label">ID</div><div class="id-field-value">{{ item.pk }}</div></div>
+      <div class="id-field"><div class="id-field-label">N°</div><div class="id-field-value">{{ item.pk }}</div></div>
+      <div class="id-field"><div class="id-field-label">Titre / Objet</div><div class="id-field-value" style="font-size:1rem">{{ item.titre|default:'-' }}</div></div>
       <div class="id-field"><div class="id-field-label">UUID</div><div class="id-field-value" style="word-break:break-all">{{ item.uuid }}</div></div>
-      <div class="id-field"><div class="id-field-label">Type d'incident</div><div class="id-field-value" style="font-size:1rem">{{ item.type_incident }}</div></div>
-      <div class="id-field"><div class="id-field-label">Gravité</div><div class="id-field-value"><span class="id-badge id-badge-{{ item.gravite }}">{{ item.gravite }}</span></div></div>
-      <div class="id-field"><div class="id-field-label">Statut</div><div class="id-field-value"><span class="id-badge id-badge-{{ item.statut }}">{{ item.statut }}</span></div></div>
+      <div class="id-field"><div class="id-field-label">Type d'incident</div><div class="id-field-value">{{ item.type_incident.nom }}</div></div>
+      <div class="id-field"><div class="id-field-label">Gravité</div><div class="id-field-value"><span class="id-badge id-badge-{{ item.gravite }}">{{ item.get_gravite_display }}</span></div></div>
+      <div class="id-field"><div class="id-field-label">Statut</div><div class="id-field-value"><span class="id-badge id-badge-{{ item.statut }}">{{ item.get_statut_display }}</span></div></div>
       <div class="id-field"><div class="id-field-label">Date de l'incident</div><div class="id-field-value">{{ item.date_incident|date:'d/m/Y H:i'|default:'-' }}</div></div>
       <div class="id-field"><div class="id-field-label">Visite associée</div><div class="id-field-value">{% if item.visite %}<a href="{% url 'detail_visite' item.visite.pk %}" style="color:var(--primary);text-decoration:underline">Visite #{{ item.visite.pk }}</a>{% else %}-{% endif %}</div></div>
-      <div class="id-field id-field-full"><div class="id-field-label">Motif</div><div class="id-field-value" style="white-space:pre-line">{{ item.motif|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Personne (NIP)</div><div class="id-field-value">{% if item.personne %}{{ item.personne.nom }} {{ item.personne.prenom }} ({{ item.personne.numero_nip|default:'-' }}){% else %}-{% endif %}</div></div>
+      <div class="id-field id-field-full"><div class="id-field-label">Description</div><div class="id-field-value" style="white-space:pre-line">{{ item.motif|default:'-' }}</div></div>
+      {% if item.justification %}
+      <div class="id-field id-field-full"><div class="id-field-label">Justification (dernière modification)</div><div class="id-field-value" style="white-space:pre-line;color:var(--secondary)">{{ item.justification }}</div></div>
+      {% endif %}
     </div>
   </section>
 
+  {% if item.visite and item.visite.visiteur %}
   <section class="id-card">
     <h2 class="id-section-title">Visiteur associé</h2>
     <div class="id-grid id-grid-3">
@@ -71,6 +76,16 @@
       <div class="id-field"><div class="id-field-label">Email</div><div class="id-field-value">{{ item.visite.visiteur.email|default:'-' }}</div></div>
     </div>
   </section>
+  {% elif item.personne %}
+  <section class="id-card">
+    <h2 class="id-section-title">Personne concernée (hors visite)</h2>
+    <div class="id-grid id-grid-3">
+      <div class="id-field"><div class="id-field-label">Nom</div><div class="id-field-value">{{ item.personne.nom|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">Prénom</div><div class="id-field-value">{{ item.personne.prenom|default:'-' }}</div></div>
+      <div class="id-field"><div class="id-field-label">NIP</div><div class="id-field-value">{{ item.personne.numero_nip|default:'-' }}</div></div>
+    </div>
+  </section>
+  {% endif %}
 
   <section class="id-card">
     <h2 class="id-section-title">Audit</h2>
@@ -81,6 +96,41 @@
       <div class="id-field"><div class="id-field-label">Modifié par</div><div class="id-field-value">{% if item.updated_by %}{{ item.updated_by.get_full_name|default:item.updated_by.username }}{% else %}-{% endif %}</div></div>
     </div>
   </section>
+
+  {% if historique %}
+  <section class="id-card">
+    <h2 class="id-section-title">Historique des modifications</h2>
+    <div style="margin-top:1rem">
+      {% for h in historique %}
+      <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem 0;border-bottom:1px solid #f1f5f9">
+        <div style="flex-shrink:0;width:2rem;height:2rem;border-radius:9999px;background:{{ h.action|yesno:'#e8f3fc,#fef3c7,#fee2e2' }};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;color:{{ h.action|yesno:'var(--primary),#d97706,#dc2626' }}">{{ h.action|slice:':2' }}</div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:.8125rem;font-weight:700;color:#0f172a;margin:0">{{ h.action }} — {{ h.created_at|date:'d/m/Y H:i' }}</p>
+          <p style="font-size:.75rem;color:#64748b;margin:.125rem 0 0">par {{ h.utilisateur.get_full_name|default:h.utilisateur.username }}</p>
+          {% if h.details %}<p style="font-size:.75rem;color:#475569;margin:.25rem 0 0;white-space:pre-line">{{ h.details }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if liste_noire_entries %}
+  <section class="id-card">
+    <h2 class="id-section-title">Liste Noire associée</h2>
+    <div style="margin-top:1rem">
+      {% for ln in liste_noire_entries %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-radius:.75rem;border:1px solid #f1f5f9;margin-bottom:.5rem">
+        <div>
+          <p style="font-size:.875rem;font-weight:700;color:#0f172a;margin:0">{{ ln.nom }} {{ ln.prenom }}</p>
+          <p style="font-size:.75rem;color:#64748b;margin:.25rem 0 0">{{ ln.motif|default:'-' }} — {{ ln.date_debut|date:'d/m/Y'|default:'-' }}</p>
+        </div>
+        <span class="id-badge" style="background:{% if ln.statut == 'ACTIF' %}#fee2e2;color:#dc2626{% else %}#f3f4f6;color:#6b7280{% endif %}">{{ ln.statut|title }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   <div class="id-actions">
     {% if perms.incidents.change_incident %}

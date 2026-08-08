@@ -23,31 +23,24 @@ JOURS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'
 @login_required
 def liste_creneaux(request):
     query = request.GET.get('q', '').strip()
-    status_filter = request.GET.get('statut', 'TOUS')
 
-    items = CreneauSemaine.objects.all()
+    # Grouper tous les créneaux par jour
+    all_items = CreneauSemaine.objects.all().order_by('heure_debut')
 
-    if query:
-        items = items.filter(
-            Q(jour_semaine__icontains=query) |
-            Q(heure_debut__icontains=query) |
-            Q(heure_fin__icontains=query)
-        )
-    if status_filter != 'TOUS':
-        items = items.filter(statut=status_filter)
-
-    items = items.order_by('-created_at')
-
-    paginator = Paginator(items, 10)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-    page_links = paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+    jours_data = []
+    for jour in JOURS:
+        slots = [s for s in all_items if s.jour_semaine == jour]
+        # Un jour est "actif" s'il a au moins un créneau ACTIF
+        has_active = any(s.statut == 'ACTIF' for s in slots)
+        jours_data.append({
+            'jour_semaine': jour,
+            'is_active': has_active,
+            'slots': slots,
+        })
 
     context = {
-        'page_obj': page_obj,
-        'page_links': page_links,
+        'jours_data': jours_data,
         'query': query,
-        'status_filter': status_filter,
     }
     return render(request, 'creneaux-semaine/liste.html', context)
 
@@ -210,3 +203,82 @@ def supprimer_creneau(request, pk):
         return redirect('liste_creneaux')
 
     return render(request, 'creneaux-semaine/detail.html', {'item': item, 'confirm_delete': True})
+
+
+# ─── AJAX ────────────────────────────────────────────────────────────────────────
+
+
+@login_required
+def ajouter_creneau_ajax(request):
+    """Ajout rapide d'un créneau, retour JSON."""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST requis'}, status=405)
+
+    jour = request.POST.get('jour_semaine', '').strip()
+    heure_debut = request.POST.get('heure_debut', '').strip()
+    heure_fin = request.POST.get('heure_fin', '').strip()
+
+    if not jour or not heure_debut or not heure_fin:
+        return JsonResponse({'ok': False, 'error': 'Champs requis'}, status=400)
+
+    if heure_debut >= heure_fin:
+        return JsonResponse({'ok': False, 'error': 'Début avant fin requis'}, status=400)
+
+    c = CreneauSemaine.objects.create(
+        jour_semaine=jour.upper(),
+        heure_debut=heure_debut,
+        heure_fin=heure_fin,
+        created_by=request.user,
+    )
+    HistoriqueAction.log(request, 'AJOUT', 'CreneauSemaine',
+                         entite_id=c.pk, details=f'{jour} {heure_debut}-{heure_fin}')
+    return JsonResponse({'ok': True, 'id': c.pk})
+
+
+@login_required
+def supprimer_creneau_ajax(request):
+    """Suppression rapide, retour JSON."""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST requis'}, status=405)
+
+    try:
+        c = CreneauSemaine.objects.get(pk=request.POST.get('pk'))
+    except CreneauSemaine.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Créneau introuvable'}, status=404)
+
+    HistoriqueAction.log(request, 'SUPPRESSION', 'CreneauSemaine',
+                         entite_id=c.pk, details=f'{c.jour_semaine} {c.heure_debut}-{c.heure_fin}')
+    c.delete()
+    return JsonResponse({'ok': True})
+
+
+@login_required
+def sauvegarder_config_planning(request):
+    """Sauvegarde de la configuration planning complète (batch)."""
+    import json
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST requis'}, status=405)
+
+    try:
+        body = json.loads(request.body)
+    except (ValueError, AttributeError):
+        return JsonResponse({'ok': False, 'error': 'JSON invalide'}, status=400)
+
+    days = body.get('days', [])
+    for d in days:
+        jour = d.get('jour_semaine', '').upper()
+        is_active = d.get('is_active', False)
+
+        # Mettre à jour les créneaux de ce jour
+        CreneauSemaine.objects.filter(jour_semaine=jour).update(
+            statut='ACTIF' if is_active else 'INACTIF'
+        )
+
+    HistoriqueAction.log(request, 'CONFIG_PLANNING', 'CreneauSemaine',
+                         details=f'Sauvegarde planning: {len(days)} jours')
+
+    return JsonResponse({'ok': True})
