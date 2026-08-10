@@ -21,13 +21,14 @@ from alertes_et_notifications.models import Alerte
 from .models import ObjetOublie
 from entreprise.models import Departement
 from utilisateurs.models import HistoriqueAction
-from visites.models import Visite
+from visites.models import Visite, Visiteur
 
 
 def _base_ctx():
     return {
         'departements': Departement.objects.all(),
         'visites': Visite.objects.select_related('visiteur')[:100],
+        'visiteurs': Visiteur.objects.filter(statut='ACTIF').order_by('nom', 'prenom'),
     }
 
 
@@ -135,6 +136,7 @@ def ajouter_objet_oublie(request):
             description=request.POST.get('description', '').strip() or None,
             date_trouve=request.POST.get('date_trouve', '').strip() or None,
             lieu_trouve=request.POST.get('lieu_trouve', '').strip() or None,
+            visiteur_id=request.POST.get('visiteur') or None,
             visite_id=request.POST.get('visite') or None,
             departement_id=request.POST.get('departement') or None,
             date_remise=request.POST.get('date_remise', '').strip() or None,
@@ -177,6 +179,7 @@ def modifier_objet_oublie(request, pk):
         item.description = request.POST.get('description', '').strip() or None
         item.date_trouve = request.POST.get('date_trouve', '').strip() or None
         item.lieu_trouve = request.POST.get('lieu_trouve', '').strip() or None
+        item.visiteur_id = request.POST.get('visiteur') or None
         item.visite_id = request.POST.get('visite') or None
         item.departement_id = request.POST.get('departement') or None
         item.date_remise = request.POST.get('date_remise', '').strip() or None

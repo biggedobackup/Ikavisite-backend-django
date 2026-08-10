@@ -94,7 +94,7 @@
             <a href="{% url 'liste_visites_encours' %}"{% if u == 'liste_visites_encours' or u == 'detail_visite_encours' %} class="active"{% endif %}>Visites en cours</a>
             {% endif %}
             {% if perms.visites.view_visiteterminee %}
-            <a href="{% url 'liste_visites_terminees' %}"{% if u == 'liste_visites_terminees' or u == 'detail_visite_terminee' %} class="active"{% endif %}>Visites terminées</a>
+            <a href="{% url 'liste_visites_terminees' %}"{% if u == 'liste_visites_terminees' or u == 'detail_visite_terminee' %} class="active"{% endif %}>Visites Clôturées</a>
             {% endif %}
             {% if perms.visites.view_visiteexcedee %}
             <a href="{% url 'liste_visites_excedees' %}"{% if u == 'liste_visites_excedees' or u == 'detail_visite_excedee' %} class="active"{% endif %}>Visites excédées</a>
@@ -113,7 +113,7 @@
       {% endwith %}
       {% endif %}
 
-      {% if perms.incidents.view_incident %}
+      {% if perms.incidents.view_incident or perms.incidents.view_detectiondecision %}
       {% with u=request.resolver_match.url_name %}
       <div>
         <a href="#" class="ika-nav-item{% if '/incidents/' in request.path %} active{% endif %}" data-toggle="sub-incidents">
@@ -127,6 +127,9 @@
           {% endif %}
           {% if perms.incidents.view_incident %}
           <a href="{% url 'liste_incidents' %}"{% if u == 'liste_incidents' or u == 'ajouter_incident' or u == 'detail_incident' or u == 'modifier_incident' %} class="active"{% endif %}>Liste des incidents</a>
+          {% endif %}
+          {% if perms.incidents.view_detectiondecision %}
+          <a href="{% url 'liste_decisions' %}"{% if u == 'liste_decisions' %} class="active"{% endif %}>Suivi des détections</a>
           {% endif %}
         </div>
       {% endwith %}
@@ -166,6 +169,9 @@
           {% if perms.liste_noire.view_listenoire %}
           <a href="{% url 'liste_listes_noires' %}"{% if u == 'liste_listes_noires' or u == 'ajouter_liste_noire' or u == 'detail_liste_noire' or u == 'modifier_liste_noire' %} class="active"{% endif %}>Liste noire</a>
           <a href="{% url 'liste_detections_liste_noire' %}"{% if u == 'liste_detections_liste_noire' or u == 'detail_detection_liste_noire' %} class="active"{% endif %}>Détections liste noire</a>
+          {% endif %}
+          {% if perms.incidents.view_detectiondecision %}
+          <a href="{% url 'liste_decisions' %}?type_detection=Liste+noire"{% if u == 'liste_decisions' %} class="active"{% endif %}>Suivi Liste Noire</a>
           {% endif %}
         </div>
       </div>
@@ -228,11 +234,12 @@
         <a href="{% url 'liste_visites' %}" class="ika-nav-item">Liste des visites</a>
         {% endif %}
         {% if perms.visites.view_visiteencours %}<a href="{% url 'liste_visites_encours' %}" class="ika-nav-item">Visites en cours</a>{% endif %}
-        {% if perms.visites.view_visiterminee %}<a href="{% url 'liste_visites_terminees' %}" class="ika-nav-item">Visites terminées</a>{% endif %}
+        {% if perms.visites.view_visiterminee %}<a href="{% url 'liste_visites_terminees' %}" class="ika-nav-item">Visites Clôturées</a>{% endif %}
         {% if perms.visites.view_visiteexcedee %}<a href="{% url 'liste_visites_excedees' %}" class="ika-nav-item">Visites excédées</a>{% endif %}
         {% if perms.visites.view_visiteur %}<a href="{% url 'liste_visiteurs' %}" class="ika-nav-item">Visiteurs</a>{% endif %}
         {% if perms.incidents.view_typeincident %}<a href="{% url 'liste_types_incident' %}" class="ika-nav-item">Types d'incident</a>{% endif %}
         {% if perms.incidents.view_incident %}<a href="{% url 'liste_incidents' %}" class="ika-nav-item">Liste des incidents</a>{% endif %}
+        {% if perms.incidents.view_detectiondecision %}<a href="{% url 'liste_decisions' %}" class="ika-nav-item">Suivi des détections</a>{% endif %}
         {% if perms.objets_oublies.view_objetoublie %}<a href="{% url 'detection_objets_oublies' %}" class="ika-nav-item">Détection objets</a>{% endif %}
         {% if perms.objets_oublies.view_objetoublie %}<a href="{% url 'liste_objets_oublies' %}" class="ika-nav-item">Objets oubliés</a>{% endif %}
       </div>
@@ -243,6 +250,7 @@
         <p class="ika-nav-section-title">Contrôles de sécurité</p>
         {% if perms.liste_noire.view_listenoire %}<a href="{% url 'liste_listes_noires' %}" class="ika-nav-item">Listes noires</a>{% endif %}
         {% if perms.liste_noire.view_listenoire %}<a href="{% url 'liste_detections_liste_noire' %}" class="ika-nav-item">Détections liste noire</a>{% endif %}
+        {% if perms.incidents.view_detectiondecision %}<a href="{% url 'liste_decisions' %}?type_detection=Liste+noire" class="ika-nav-item">Suivi Liste Noire</a>{% endif %}
       </div>
       {% endif %}
 

@@ -224,6 +224,7 @@ def ajouter_liste_noire(request):
             numero_nip=request.POST.get('numero_nip', '').strip() or None,
             date_debut=request.POST.get('date_debut', '').strip() or None,
             date_fin=request.POST.get('date_fin', '').strip() or None,
+            blocage_automatique=request.POST.get('blocage_automatique') == 'on',
             created_by=request.user,
         )
         HistoriqueAction.log(request, action='AJOUT', entite='ListeNoire', entite_id=obj.pk, details=f'Inscrit : {nom} {prenom}')
@@ -256,6 +257,7 @@ def modifier_liste_noire(request, pk):
         item.date_debut = request.POST.get('date_debut', '').strip() or None
         item.date_fin = request.POST.get('date_fin', '').strip() or None
         item.statut = request.POST.get('statut', 'ACTIF')
+        item.blocage_automatique = request.POST.get('blocage_automatique') == 'on'
         item.updated_by = request.user
         item.save()
         HistoriqueAction.log(request, action='MODIFICATION', entite='ListeNoire', entite_id=item.pk, details=f'Inscription modifiée : {item.nom} {item.prenom}')

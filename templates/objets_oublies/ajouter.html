@@ -51,10 +51,10 @@
 
     <h2 class="oa-section-title">Informations de l'objet</h2>
     <div class="oa-grid" style="margin-top:1.25rem">
-      <div><label class="oa-label">Visite</label>
-        <select class="oa-select" name="visite">
+      <div><label class="oa-label">Visiteur</label>
+        <select class="oa-select" name="visiteur">
           <option value="">Sélectionner</option>
-          {% for v in visites %}<option value="{{ v.pk }}" {% if request.POST.visite|stringformat:'s' == v.pk|stringformat:'s' %}selected{% endif %}>{{ v.visiteur.nom|default:'-' }} {{ v.visiteur.prenom|default:'' }} ({{ v.date_visite|date:'d/m/Y'|default:'-' }})</option>{% endfor %}
+          {% for v in visiteurs %}<option value="{{ v.pk }}" {% if request.POST.visiteur|stringformat:'s' == v.pk|stringformat:'s' %}selected{% endif %}>{{ v.nom }} {{ v.prenom }} (NIP: {{ v.numero_nip|default:'-' }})</option>{% endfor %}
         </select>
       </div>
       <div><label class="oa-label">Nom de l'objet <span class="oa-required">*</span></label><input class="oa-input" type="text" name="nom_objet" value="{{ request.POST.nom_objet|default:'' }}" placeholder="Téléphone, clés, portefeuille..." required /></div>

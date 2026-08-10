@@ -42,6 +42,10 @@ class ListeNoire(models.Model):
     piece_identite = models.CharField(max_length=100, null=True, blank=True)
     numero_piece = models.CharField(max_length=100, null=True, blank=True)
     numero_nip = models.CharField(max_length=100, null=True, blank=True)
+    blocage_automatique = models.BooleanField(
+        default=True,
+        help_text='Si coché, l\'enregistrement est automatiquement bloqué (BLOCK). Sinon, avertissement seulement (WARN).'
+    )
     date_debut = models.DateTimeField(null=True, blank=True)
     date_fin = models.DateTimeField(null=True, blank=True)
     statut = models.CharField(max_length=50, default='ACTIF')

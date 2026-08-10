@@ -13,6 +13,7 @@ urlpatterns = [
     # Visites
     path('', views.liste_visites, name='liste_visites'),
     path('ajouter/', views.ajouter_visite, name='ajouter_visite'),
+    path('enregistrer-refus/', views.enregistrer_refus_visite, name='enregistrer_refus_visite'),
     path('detail/<int:pk>/', views.detail_visite, name='detail_visite'),
     path('modifier/<int:pk>/', views.modifier_visite, name='modifier_visite'),
     path('terminer/<int:pk>/', views.terminer_visite, name='terminer_visite'),

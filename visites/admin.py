@@ -77,7 +77,7 @@ class VisiteBaseAdmin(admin.ModelAdmin):
         agg = Visite.objects.aggregate(
             total=Count('id'),
             en_cours=Count('id', filter=Q(statut='EN_COURS')),
-            terminees=Count('id', filter=Q(statut='TERMINE')),
+            terminees=Count('id', filter=Q(statut__in=['TERMINE', 'SORTIE_SYSTEME'])),
             excedees=Count('id', filter=Q(statut='EXCEDE')),
         )
         context = {
@@ -108,7 +108,7 @@ class VisiteTermineeAdmin(VisiteBaseAdmin):
     verbose_name = 'Visite terminée'
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(statut='TERMINE')
+        return super().get_queryset(request).filter(statut__in=['TERMINE', 'SORTIE_SYSTEME'])
 
 
 @admin.register(VisiteExcedee)

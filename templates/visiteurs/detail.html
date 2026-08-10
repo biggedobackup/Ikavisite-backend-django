@@ -74,6 +74,11 @@
         <h2 class="vtrd-name">{{ item.prenom }} {{ item.nom }}</h2>
         <span class="vtrd-badge vtrd-badge-{{ item.statut }}">{{ item.statut }}</span>
         {% if item.piece_identite %}<span class="vtrd-doc-badge" style="margin-left:.5rem">{{ item.piece_identite }}</span>{% endif %}
+        {% if same_nip_count > 0 %}
+        <p style="font-size:.75rem;font-weight:600;color:#d97706;margin-top:.375rem">
+          ⚠ Historique fusionné — {{ same_nip_count }} autre(s) enregistrement(s) partagent le même NIP
+        </p>
+        {% endif %}
       </div>
     </div>
 
@@ -199,6 +204,7 @@
           <th>Personnel</th>
           <th>Departement</th>
           <th>Porte</th>
+          <th>Document</th>
           <th>Arrivee</th>
           <th>Sortie</th>
           <th>Statut</th>
@@ -212,6 +218,7 @@
           <td>{% if v.personnel %}{{ v.personnel.prenom }} {{ v.personnel.nom }}{% else %}-{% endif %}</td>
           <td>{% if v.personnel and v.personnel.departement %}{{ v.personnel.departement.nom }}{% else %}-{% endif %}</td>
           <td>{{ v.porte_entree.titre|default:'-' }}</td>
+          <td>{{ v.visiteur.piece_identite|default:'-' }}</td>
           <td>{% if v.date_visite %}{{ v.date_visite|date:'d/m/Y' }} {{ v.heure_arrivee|time:'H:i' }}{% else %}-{% endif %}</td>
           <td>{% if v.date_depart %}{{ v.date_depart|date:'d/m/Y' }} {{ v.heure_depart|time:'H:i' }}{% else %}-{% endif %}</td>
           <td><span class="vtrd-doc-badge">{{ v.statut }}</span></td>

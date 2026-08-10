@@ -47,9 +47,9 @@
         <input class="persm-input" type="text" name="fonction" value="{{ item.fonction|default:'' }}" />
       </div>
       <div>
-        <label class="persm-label">Département</label>
-        <select class="persm-select" name="id_departement">
-          <option value="">Aucun</option>
+        <label class="persm-label">Département <span class="persm-required">*</span></label>
+        <select class="persm-select" name="id_departement" required>
+          <option value="">Sélectionner un département</option>
           {% for d in departements %}
           <option value="{{ d.pk }}" {% if item.departement_id == d.pk %}selected{% endif %}>{{ d.nom }}</option>
           {% endfor %}

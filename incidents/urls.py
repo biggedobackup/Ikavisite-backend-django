@@ -16,4 +16,6 @@ urlpatterns = [
     path('types/ajouter/', views.ajouter_type_incident, name='ajouter_type_incident'),
     path('types/modifier/<int:pk>/', views.modifier_type_incident, name='modifier_type_incident'),
     path('types/supprimer/<int:pk>/', views.supprimer_type_incident, name='supprimer_type_incident'),
+    # Suivi des décisions de détection
+    path('decisions/', views.liste_decisions, name='liste_decisions'),
 ]

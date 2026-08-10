@@ -18,7 +18,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from alertes_et_notifications.models import Alerte
-from .models import Incident, TypeIncident, GRAVITE_CHOICES, STATUT_INCIDENT_CHOICES
+from .models import Incident, TypeIncident, GRAVITE_CHOICES, STATUT_INCIDENT_CHOICES, DetectionDecision, DECISION_CHOICES
 from utilisateurs.models import HistoriqueAction
 from visites.models import Visite, Visiteur
 
@@ -563,3 +563,40 @@ def supprimer_type_incident(request, pk):
         return redirect('liste_types_incident')
     # GET non autorisé
     return redirect('liste_types_incident')
+
+
+@login_required
+@permission_required('incidents.view_detectiondecision', raise_exception=True)
+def liste_decisions(request):
+    qs = DetectionDecision.objects.all().select_related('agent', 'visite')
+    # Filtres
+    decision_filter = request.GET.get('decision', '').strip()
+    type_filter = request.GET.get('type_detection', '').strip()
+    q = request.GET.get('q', '').strip()
+
+    if decision_filter:
+        qs = qs.filter(decision=decision_filter)
+    if type_filter:
+        qs = qs.filter(type_detection=type_filter)
+    if q:
+        qs = qs.filter(
+            Q(visiteur_nom__icontains=q) |
+            Q(visiteur_prenom__icontains=q) |
+            Q(visiteur_nip__icontains=q) |
+            Q(visiteur_piece__icontains=q)
+        )
+
+    paginator = Paginator(qs, 25)
+    page = paginator.get_page(request.GET.get('page'))
+
+    # Types uniques pour le filtre (déjà vus dans les données)
+    types_disponibles = DetectionDecision.objects.values_list('type_detection', flat=True).distinct().order_by('type_detection')
+
+    return render(request, 'incidents/decisions/liste.html', {
+        'page_obj': page,
+        'query': q,
+        'decision_filter': decision_filter,
+        'type_filter': type_filter,
+        'types_disponibles': types_disponibles,
+        'decision_choices': DECISION_CHOICES,
+    })

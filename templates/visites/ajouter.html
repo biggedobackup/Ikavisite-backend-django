@@ -219,6 +219,55 @@
   </form>
 </div>
 
+<!-- ═══ Overlay Alerte Incidents → Choix Refuser/Autoriser ═══ -->
+{% if warn_matches %}
+<div id="warnOverlay" style="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:1.25rem;width:90%;max-width:480px;box-shadow:0 25px 50px rgba(0,0,0,.2);overflow:hidden">
+    <div style="background:#fef3c7;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:.75rem">
+      <svg style="width:1.5rem;height:1.5rem;color:#d97706;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+      <div>
+        <p style="font-size:.9375rem;font-weight:900;color:#92400e;margin:0">Alerte de securite</p>
+        <p style="font-size:.8125rem;color:#a16207;margin:.125rem 0 0">{{ warn_nom }}</p>
+      </div>
+    </div>
+    <div style="padding:1.25rem 1.5rem">
+      <p style="font-size:.875rem;color:#475569;margin:0 0 1rem">Ce visiteur a un historique d'incidents :</p>
+      {% for m in warn_matches %}
+      <div style="display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .75rem;background:#f8fafc;border-radius:.75rem;border:1px solid #f1f5f9;margin-bottom:.5rem">
+        <span style="display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:#d97706;margin-top:.375rem;flex-shrink:0"></span>
+        <div>
+          <p style="font-size:.8125rem;font-weight:700;color:#0f172a;margin:0">{{ m.type }}</p>
+          <p style="font-size:.75rem;color:#64748b;margin:.125rem 0 0">{{ m.detail }}</p>
+        </div>
+      </div>
+      {% endfor %}
+      <p style="font-size:.8125rem;color:#64748b;margin:1rem 0 1.25rem">Souhaitez-vous autoriser l'acces malgre cet historique ?</p>
+      <form method="post" action="{% url 'enregistrer_refus_visite' %}">
+        {% csrf_token %}
+        <input type="hidden" name="visiteur_nom" value="{{ post_data.v_nom }}">
+        <input type="hidden" name="visiteur_prenom" value="{{ post_data.v_prenom }}">
+        <input type="hidden" name="visiteur_nip" value="{{ post_data.v_nip }}">
+        <input type="hidden" name="visiteur_piece" value="{{ post_data.v_numero_piece }}">
+        <input type="hidden" name="matches_json" value="{{ warn_matches_json|force_escape }}">
+        <div style="display:flex;gap:.75rem">
+          <button type="submit" style="flex:1;padding:.75rem 1rem;border-radius:.75rem;font-size:.875rem;font-weight:700;border:none;background:#dc2626;color:#fff;cursor:pointer;box-shadow:0 4px 6px rgba(220,38,38,.2)">Refuser</button>
+          <button type="button" onclick="document.getElementById('warnForceForm').submit()" style="flex:1;padding:.75rem 1rem;border-radius:.75rem;font-size:.875rem;font-weight:700;border:none;background:#16a34a;color:#fff;cursor:pointer;box-shadow:0 4px 6px rgba(22,163,74,.2)">Autoriser</button>
+        </div>
+      </form>
+      <form id="warnForceForm" method="post" action="{% url 'ajouter_visite' %}" enctype="multipart/form-data" style="display:none">
+        {% csrf_token %}
+        <input type="hidden" name="force_enregistrement" value="1">
+        {% for key, value in post_data.items %}
+        {% if key != 'csrfmiddlewaretoken' and key != 'force_enregistrement' %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endif %}
+        {% endfor %}
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <script>
 var DUREE_MOYENNE_VISITES = {{ duree_moyenne_visites|default:60 }};
 function formatDatetimeLocal(d) {
@@ -781,7 +830,7 @@ function checkVisitMode() {
         badge.style.color = '#fff';
         badge.style.background = '#16a34a';
         reqSpan.style.display = 'none';
-        if (sel) { sel.required = false; sel.value = ''; }
+        if (sel) { sel.required = false; }
         if (field) field.style.display = 'none';
       }
     })

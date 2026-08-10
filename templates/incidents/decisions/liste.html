@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Suivi des détections{% endblock %}
+{% block extra_css %}
+<style>
+.ddc-filters{display:flex;flex-wrap:wrap;gap:.75rem;margin:0 0 1.25rem;align-items:center}
+.ddc-filter-chip{display:inline-flex;align-items:center;gap:.375rem;padding:.375rem .75rem;border-radius:2rem;font-size:.75rem;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;text-decoration:none;transition:all .15s}
+.ddc-filter-chip:hover{background:#f8fafc;border-color:#cbd5e1}
+.ddc-filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.ddc-filter-chip.REFUSE_SYSTEME.active{background:#dc2626;border-color:#dc2626}
+.ddc-filter-chip.REFUSE_AGENT.active{background:#ea580c;border-color:#ea580c}
+.ddc-filter-chip.AUTORISE.active{background:#16a34a;border-color:#16a34a}
+.ddc-table{width:100%;border-collapse:collapse;font-size:.8125rem}
+.ddc-table th{background:#f8fafc;padding:.625rem .75rem;text-align:left;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+.ddc-table td{padding:.625rem .75rem;border-bottom:1px solid #f1f5f9;color:#0f172a}
+.ddc-table tr:hover td{background:#f8fafc}
+.ddc-visiteur{font-weight:700}
+.ddc-visiteur .nip{display:block;font-size:.6875rem;color:#64748b;font-weight:400}
+.ddc-badge{display:inline-block;padding:.1875rem .5rem;border-radius:2rem;font-size:.6875rem;font-weight:700}
+.ddc-badge-refuse-systeme{background:#fef2f2;color:#dc2626}
+.ddc-badge-refuse-agent{background:#fff7ed;color:#ea580c}
+.ddc-badge-autorise{background:#f0fdf4;color:#16a34a}
+.ddc-badge-liste-noire{background:#fef2f2;color:#b91c1c}
+.ddc-badge-incident{background:#fef3c7;color:#92400e}
+.ddc-badge-vigilance{background:#fefce8;color:#a16207}
+.ddc-detail{font-size:.75rem;color:#64748b;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ddc-search{display:flex;align-items:center;gap:.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:.375rem .75rem;margin-left:auto}
+.ddc-search input{border:none;outline:none;font-size:.8125rem;flex:1;min-width:180px}
+.ddc-count{font-size:.75rem;color:#64748b;margin:0 0 1rem}
+.ddc-empty{text-align:center;padding:3rem 1rem;color:#94a3b8}
+.ddc-empty svg{width:3rem;height:3rem;margin:0 auto 1rem;display:block;color:#cbd5e1}
+
+@media(max-width:640px){
+  .ddc-filters{overflow-x:auto;flex-wrap:nowrap;padding-bottom:.25rem}
+  .ddc-table{display:block;overflow-x:auto}
+  .ddc-detail{max-width:160px}
+  .ddc-search{min-width:100%;margin-left:0}
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>Suivi des détections</h1>
+      <p style="font-size:.8125rem;color:#64748b;margin:.25rem 0 0">Historique des décisions prises lors des détections (Liste Noire, Incidents, Vigilance)</p>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="ddc-filters">
+    <span style="font-size:.75rem;font-weight:700;color:#475569">Décision :</span>
+    <a href="?{% if type_filter %}type_detection={{ type_filter }}&{% endif %}{% if query %}q={{ query }}&{% endif %}" class="ddc-filter-chip {% if not decision_filter %}active{% endif %}">Toutes</a>
+    {% for val, label in decision_choices %}
+    <a href="?decision={{ val }}{% if type_filter %}&type_detection={{ type_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="ddc-filter-chip {{ val }} {% if decision_filter == val %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+    <span style="width:.5rem"></span>
+    <span style="font-size:.75rem;font-weight:700;color:#475569">Type :</span>
+    <a href="?{% if decision_filter %}decision={{ decision_filter }}&{% endif %}{% if query %}q={{ query }}&{% endif %}" class="ddc-filter-chip {% if not type_filter %}active{% endif %}">Tous</a>
+    {% for t in types_disponibles %}
+    <a href="?type_detection={{ t }}{% if decision_filter %}&decision={{ decision_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="ddc-filter-chip {% if type_filter == t %}active{% endif %}">{{ t }}</a>
+    {% endfor %}
+    <form method="get" class="ddc-search">
+      {% if decision_filter %}<input type="hidden" name="decision" value="{{ decision_filter }}">{% endif %}
+      {% if type_filter %}<input type="hidden" name="type_detection" value="{{ type_filter }}">{% endif %}
+      <svg style="width:1rem;height:1rem;color:#94a3b8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" value="{{ query }}" placeholder="Rechercher nom, NIP, pièce...">
+    </form>
+  </div>
+
+  <p class="ddc-count">{{ page_obj.paginator.count }} décision(s) enregistrée(s)</p>
+
+  {% if page_obj %}
+  <table class="ddc-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Visiteur</th>
+        <th>NIP / Pièce</th>
+        <th>Type détection</th>
+        <th>Détail</th>
+        <th>Décision</th>
+        <th>Agent</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in page_obj %}
+      <tr>
+        <td style="white-space:nowrap">{{ d.created_at|date:'d/m/Y H:i' }}</td>
+        <td class="ddc-visiteur">
+          {{ d.visiteur_prenom }} {{ d.visiteur_nom }}
+          {% if d.visite %}<a href="{% url 'detail_visite' d.visite.pk %}" style="font-size:.6875rem;color:var(--primary)" title="Voir la visite">#{{ d.visite.pk }}</a>{% endif %}
+        </td>
+        <td style="font-size:.75rem">
+          {% if d.visiteur_nip %}<span class="nip">NIP: {{ d.visiteur_nip }}</span>{% endif %}
+          {% if d.visiteur_piece %}<span class="nip">Pièce: {{ d.visiteur_piece }}</span>{% endif %}
+          {% if not d.visiteur_nip and not d.visiteur_piece %}-{% endif %}
+        </td>
+        <td>
+          <span class="ddc-badge {% if d.type_detection == 'Liste noire' %}ddc-badge-liste-noire{% elif d.type_detection == 'Incident' %}ddc-badge-incident{% elif d.type_detection == 'Vigilance' %}ddc-badge-vigilance{% endif %}">{{ d.type_detection }}</span>
+        </td>
+        <td class="ddc-detail" title="{{ d.detail_detection }}">{{ d.detail_detection }}</td>
+        <td>
+          <span class="ddc-badge {% if d.decision == 'REFUSE_SYSTEME' %}ddc-badge-refuse-systeme{% elif d.decision == 'REFUSE_AGENT' %}ddc-badge-refuse-agent{% elif d.decision == 'AUTORISE' %}ddc-badge-autorise{% endif %}">{{ d.get_decision_display }}</span>
+        </td>
+        <td style="font-size:.75rem;white-space:nowrap">{{ d.agent.username|default:'-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:.375rem;margin:1.5rem 0 0">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if decision_filter %}&decision={{ decision_filter }}{% endif %}{% if type_filter %}&type_detection={{ type_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}" style="padding:.375rem .75rem;border-radius:.5rem;border:1px solid #e2e8f0;font-size:.8125rem;text-decoration:none;color:#475569">&laquo; Précédent</a>
+    {% endif %}
+    <span style="padding:.375rem .75rem;font-size:.8125rem;color:#64748b">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if decision_filter %}&decision={{ decision_filter }}{% endif %}{% if type_filter %}&type_detection={{ type_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}" style="padding:.375rem .75rem;border-radius:.5rem;border:1px solid #e2e8f0;font-size:.8125rem;text-decoration:none;color:#475569">Suivant &raquo;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="ddc-empty">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-3-3v6m-7 7h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+    <p style="font-size:.875rem;font-weight:600;color:#64748b">Aucune décision enregistrée</p>
+    <p style="font-size:.75rem;color:#94a3b8">Les décisions apparaîtront ici lorsqu'un visiteur sera refusé ou autorisé via les alertes de sécurité.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

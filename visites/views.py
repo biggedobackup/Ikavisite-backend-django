@@ -340,20 +340,23 @@ def _save_signature(signature_data, prefix='signature'):
 def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False, user=None, porte_entree_id=None):
     matches = []
     has_block = False
-    q_nom = Q(nom__iexact=nom)
+    q_nom = Q(nom__iexact=nom) if nom else Q()
     q_prenom = Q(prenom__iexact=prenom) if prenom else Q()
-    q_nip = Q(numero_nip=numero_nip) if numero_nip else Q()
-    q_piece = Q(numero_piece=numero_piece) if numero_piece else Q()
+    q_nip = Q(numero_nip__iexact=numero_nip) if numero_nip else Q()
+    q_piece = Q(numero_piece__iexact=numero_piece) if numero_piece else Q()
     q = q_nom & q_prenom
     if numero_piece:
-        q |= Q(numero_piece=numero_piece)
+        q |= Q(numero_piece__iexact=numero_piece)
     if numero_nip:
-        q |= Q(numero_nip=numero_nip)
+        q |= Q(numero_nip__iexact=numero_nip)
 
     for ln in ListeNoire.objects.filter(q, statut='ACTIF').select_related('type_liste_noire'):
         detail = ln.motif or (ln.type_liste_noire.nom if hasattr(ln, 'type_liste_noire') and ln.type_liste_noire else 'Inscrit en liste noire')
-        has_block = True
-        matches.append({'type': 'Liste noire', 'severity': 'BLOCK', 'nom': ln.nom, 'prenom': ln.prenom, 'detail': detail, 'pk': ln.pk})
+        if ln.blocage_automatique:
+            has_block = True
+            matches.append({'type': 'Liste noire', 'severity': 'BLOCK', 'nom': ln.nom, 'prenom': ln.prenom, 'detail': detail, 'pk': ln.pk})
+        else:
+            matches.append({'type': 'Liste noire', 'severity': 'WARN', 'nom': ln.nom, 'prenom': ln.prenom, 'detail': f'{detail} (blocage automatique désactivé)', 'pk': ln.pk})
         if save_detections and user and porte_entree_id:
             from liste_noire.models import DetectionListeNoire
             DetectionListeNoire.objects.create(
@@ -365,6 +368,39 @@ def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False
                 notes=f'Détecté lors de la création d\'une visite pour {nom} {prenom}',
                 created_by=user,
             )
+
+    # ═══ Détection partielle NOM/Prénom → WARN ═══
+    if nom and prenom and not has_block:
+        # Cherche les entrées LN non capturées par le BLOCK (exact)
+        excluded_pks = [m['pk'] for m in matches if m['type'] == 'Liste noire']
+        ln_qs = ListeNoire.objects.filter(statut='ACTIF').select_related('type_liste_noire')
+        if excluded_pks:
+            ln_qs = ln_qs.exclude(pk__in=excluded_pks)
+        nom_lower = nom.lower()
+        prenom_lower = prenom.lower()
+        for ln in ln_qs:
+            ln_nom = (ln.nom or '').lower()
+            ln_prenom = (ln.prenom or '').lower()
+            # Nom partiel: l'un contient l'autre
+            nom_overlap = nom_lower in ln_nom or ln_nom in nom_lower
+            prenom_overlap = prenom_lower in ln_prenom or ln_prenom in prenom_lower
+            if nom_overlap or prenom_overlap:
+                detail_parts = []
+                if nom_overlap and nom_lower != ln_nom:
+                    detail_parts.append(f'Nom similaire: {ln.nom}')
+                if prenom_overlap and prenom_lower != ln_prenom:
+                    detail_parts.append(f'Prénom similaire: {ln.prenom}')
+                detail = 'Correspondance partielle Liste Noire'
+                if detail_parts:
+                    detail += ' — ' + ', '.join(detail_parts)
+                if ln.motif:
+                    detail += f' (Motif: {ln.motif})'
+                matches.append({
+                    'type': 'Liste noire', 'severity': 'WARN',
+                    'nom': ln.nom, 'prenom': ln.prenom,
+                    'detail': detail, 'pk': ln.pk,
+                })
+
     visiteurs = Visiteur.objects.filter(q)
     # Incidents et flag_avertissement
     for inc in Incident.objects.filter(
@@ -429,6 +465,53 @@ def ajouter_visite(request):
         numero_piece = request.POST.get('v_numero_piece', '').strip()
         numero_nip = request.POST.get('v_nip', '').strip()
 
+        # ═══ Détection Liste Noire / Incidents AVANT création du visiteur ═══
+        pre_matches = _detect_matches(
+            v_nom, v_prenom,
+            numero_piece or None, numero_nip or None,
+            save_detections=False
+        )
+        if any(m.get('severity') == 'BLOCK' for m in pre_matches):
+            block_details = [m['detail'] for m in pre_matches if m.get('severity') == 'BLOCK']
+            # Enregistrer la décision REFUSE_SYSTEME
+            from incidents.models import DetectionDecision
+            for m in pre_matches:
+                DetectionDecision.objects.create(
+                    visiteur_nom=v_nom, visiteur_prenom=v_prenom,
+                    visiteur_nip=numero_nip or None, visiteur_piece=numero_piece or None,
+                    decision='REFUSE_SYSTEME',
+                    type_detection=m['type'], detail_detection=m['detail'],
+                    agent=request.user,
+                )
+            # Alerte : accès interdit
+            from alertes_et_notifications.models import Alerte
+            for m in pre_matches:
+                Alerte.objects.create(
+                    type='LISTE_NOIRE', entite_id=m.get('pk', 0),
+                    message=f'🔴 ACCÈS INTERDIT — {v_prenom} {v_nom} bloqué par le système — {m["detail"]}',
+                )
+            messages.error(request, '🔴 Accès REFUSÉ — {} {} est inscrit(e) sur la Liste Noire. Motif : {}'.format(v_prenom, v_nom, ' ; '.join(block_details)))
+            ctx = _base_ctx()
+            ctx['detection_matches_json'] = json.dumps({
+                'nom': v_nom, 'prenom': v_prenom,
+                'num_piece': numero_nip or numero_piece or '',
+                'groups': {
+                    'liste_noire': [m for m in pre_matches if m['type'] == 'Liste noire'],
+                    'vigilance': [m for m in pre_matches if m['type'] == 'Vigilance'],
+                },
+            })
+            return render(request, 'visites/ajouter.html', ctx)
+
+        # ═══ Alerte Incidents/Vigilance → choix Refuser/Autoriser ═══
+        warn_matches = [m for m in pre_matches if m.get('severity') == 'WARN']
+        if warn_matches and request.POST.get('force_enregistrement') != '1':
+            ctx = _base_ctx()
+            ctx['warn_matches'] = warn_matches
+            ctx['warn_matches_json'] = json.dumps(warn_matches)
+            ctx['warn_nom'] = v_prenom + ' ' + v_nom
+            ctx['post_data'] = request.POST
+            return render(request, 'visites/ajouter.html', ctx)
+
         genre_choices = {'Homme': 'Homme', 'Femme': 'Femme'}
         telephone = request.POST.get('v_telephone', '').strip() or None
 
@@ -461,26 +544,6 @@ def ajouter_visite(request):
         if portrait_data and not request.FILES.get('photo') and not visiteur.photo:
             visiteur.photo = _save_signature(portrait_data, 'portrait')
             visiteur.save(update_fields=['photo'])
-
-        # Vérification Liste Noire ACTIF → blocage avant création
-        pre_matches = _detect_matches(
-            visiteur.nom, visiteur.prenom,
-            visiteur.numero_piece, visiteur.numero_nip,
-            save_detections=False
-        )
-        if any(m.get('severity') == 'BLOCK' for m in pre_matches):
-            block_details = [m['detail'] for m in pre_matches if m.get('severity') == 'BLOCK']
-            messages.error(request, f"🔴 Accès REFUSÉ — {visiteur.nom} {visiteur.prenom} est inscrit sur la Liste Noire. Motif : {' ; '.join(block_details)}")
-            ctx = _base_ctx()
-            ctx['detection_matches_json'] = json.dumps({
-                'nom': visiteur.nom, 'prenom': visiteur.prenom,
-                'num_piece': visiteur.numero_nip or visiteur.numero_piece or '',
-                'groups': {
-                    'liste_noire': [m for m in pre_matches if m['type'] == 'Liste noire'],
-                    'vigilance': [m for m in pre_matches if m['type'] == 'Vigilance'],
-                },
-            })
-            return render(request, 'visites/ajouter.html', ctx)
 
         arrival = request.POST.get('arrival_datetime', '').strip()
         planned_departure = request.POST.get('planned_departure_datetime', '').strip()
@@ -548,9 +611,31 @@ def ajouter_visite(request):
                     messages.error(request, msg)
             return render(request, 'visites/ajouter.html', _base_ctx())
         HistoriqueAction.log(request, 'AJOUT', 'Visite', entite_id=visite.pk, details=f'Visite créée pour {v_nom} {v_prenom}')
+        # Enregistrer la décision AUTORISE pour les alertes levées
+        force_enr = request.POST.get('force_enregistrement', '')
+        if force_enr == '1' and warn_matches:
+            from incidents.models import DetectionDecision
+            for m in warn_matches:
+                DetectionDecision.objects.create(
+                    visiteur_nom=v_nom, visiteur_prenom=v_prenom,
+                    visiteur_nip=numero_nip or None, visiteur_piece=numero_piece or None,
+                    decision='AUTORISE',
+                    type_detection=m['type'], detail_detection=m['detail'],
+                    visite=visite, agent=request.user,
+                )
+            # Alerte pour les correspondances Liste Noire autorisées
+            ln_warns = [m for m in warn_matches if m['type'] == 'Liste noire']
+            if ln_warns:
+                from alertes_et_notifications.models import Alerte
+                for m in ln_warns:
+                    Alerte.objects.create(
+                        type='LISTE_NOIRE', entite_id=m.get('pk', 0),
+                        message=f'⚠️ ACCÈS INTERDIT — {v_prenom} {v_nom} autorisé par l\'agent malgré Liste Noire — {m["detail"]}',
+                    )
+        # Détection post-création (log seulement, pas de popup si déjà autorisé)
         matches = _detect_matches(v_nom, v_prenom, numero_piece, numero_nip, save_detections=True, user=request.user, porte_entree_id=visite.porte_entree_id)
         messages.success(request, 'Visite créée avec succès.')
-        if matches:
+        if matches and force_enr != '1':
             try:
                 channel_layer = get_channel_layer()
                 async_to_sync(channel_layer.group_send)('detections', {
@@ -832,7 +917,7 @@ def export_excel_visites_encours(request):
 # ─── Visites terminées ──────────────────────────────────────────────────
 
 def _terminees_qs():
-    return _base_qs().filter(statut='TERMINE')
+    return _base_qs().filter(statut__in=['TERMINE', 'SORTIE_SYSTEME'])
 
 
 @login_required
@@ -973,7 +1058,8 @@ def liste_visiteurs(request):
         items = items.filter(
             Q(nom__icontains=query) | Q(prenom__icontains=query) |
             Q(email__icontains=query) | Q(telephone__icontains=query) |
-            Q(nationalite__icontains=query) | Q(numero_piece__icontains=query)
+            Q(nationalite__icontains=query) | Q(numero_piece__icontains=query) |
+            Q(numero_nip__icontains=query)
         )
     if genre:
         items = items.filter(genre=genre)
@@ -987,21 +1073,69 @@ def liste_visiteurs(request):
         items = items.filter(created_at__gte=date_start)
     if date_end:
         items = items.filter(created_at__lte=date_end)
-    # Subquery : évite le LEFT JOIN + GROUP BY lourd de annotate(Count())
-    # Ne fait la sous-requête que pour les 10 visiteurs de la page
-    from django.db.models import Subquery, OuterRef, Count, IntegerField
-    nb_visites_subq = Subquery(
-        Visite.objects.filter(visiteur=OuterRef('pk'))
-        .order_by()
-        .values('visiteur')
-        .annotate(count=Count('*'))
-        .values('count')[:1],
-        output_field=IntegerField(),
-    )
-    items = items.annotate(nb_visites_annotated=nb_visites_subq).order_by('-created_at')
-    paginator = Paginator(items, 10)
+
+    # Dédoublonnage par NIP : même NIP = même personne → une seule entrée
+    all_visitors = list(items.order_by('-created_at'))
+
+    # Grouper par NIP
+    nip_groups = {}          # nip (lower) → [visiteurs]
+    no_nip = []              # visiteurs sans NIP (traités individuellement)
+    for v in all_visitors:
+        nip_raw = (v.numero_nip or '').strip()
+        if nip_raw:
+            nip_groups.setdefault(nip_raw.lower(), []).append(v)
+        else:
+            no_nip.append(v)
+
+    # Construire la liste dédoublonnée : un dict par entrée
+    entries = []
+    all_visitor_pks_for_count = []  # pks dont on veut le total de visites
+
+    for nip_key, visitors in nip_groups.items():
+        primary = visitors[0]   # le plus récent (-created_at)
+        pks = [v.pk for v in visitors]
+        all_visitor_pks_for_count.extend(pks)
+        entries.append({
+            'visitor': primary,
+            'nb_visites': 0,                     # rempli plus bas par batch
+            'is_nip_group': True,
+            'nip_members': len(visitors),
+        })
+
+    for v in no_nip:
+        all_visitor_pks_for_count.append(v.pk)
+        entries.append({
+            'visitor': v,
+            'nb_visites': 0,
+            'is_nip_group': False,
+            'nip_members': 1,
+        })
+
+    # Batch : un seul COUNT par visiteur (évite N+1)
+    from collections import Counter
+    visit_counts = Counter()
+    for batch_pks in [all_visitor_pks_for_count[i:i+500] for i in range(0, len(all_visitor_pks_for_count), 500)]:
+        qs = Visite.objects.filter(visiteur_id__in=batch_pks).values('visiteur_id').annotate(c=Count('id'))
+        for row in qs:
+            visit_counts[row['visiteur_id']] = row['c']
+
+    # Sommer les visites : pour un groupe NIP → somme sur tous les membres
+    for entry in entries:
+        if entry['is_nip_group']:
+            nip_key = (entry['visitor'].numero_nip or '').strip().lower()
+            members = nip_groups.get(nip_key, [])
+            entry['nb_visites'] = sum(visit_counts.get(m.pk, 0) for m in members)
+        else:
+            entry['nb_visites'] = visit_counts.get(entry['visitor'].pk, 0)
+
+    # Tri : même ordre que le queryset original (-created_at)
+    entries.sort(key=lambda e: e['visitor'].created_at, reverse=True)
+
+    # Pagination manuelle
+    paginator = Paginator(entries, 10)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_links = paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+
     # Cache la liste des nationalités (peu changeante)
     cache_key = 'visiteurs_nationalites_list'
     nationalites = cache.get(cache_key)
@@ -1029,12 +1163,29 @@ def liste_visiteurs(request):
 @login_required
 def detail_visiteur(request, pk):
     item = get_object_or_404(Visiteur, pk=pk)
-    visites = Visite.objects.filter(visiteur=item)\
-        .select_related('type_visite', 'porte_entree', 'personnel__departement')\
-        .order_by('-date_visite')
+
+    # Si le visiteur a un NIP, fusionner l'historique de TOUS les visiteurs
+    # partageant ce même NIP (dédoublonnage NIP)
+    same_nip_pks = []
+    if item.numero_nip:
+        same_nip_pks = list(
+            Visiteur.objects.filter(numero_nip__iexact=item.numero_nip.strip())
+            .exclude(pk=item.pk)
+            .values_list('pk', flat=True)
+        )
+        all_pks = [item.pk] + same_nip_pks
+        visites = Visite.objects.filter(visiteur_id__in=all_pks)\
+            .select_related('type_visite', 'porte_entree', 'personnel__departement', 'visiteur')\
+            .order_by('-date_visite')
+    else:
+        visites = Visite.objects.filter(visiteur=item)\
+            .select_related('type_visite', 'porte_entree', 'personnel__departement', 'visiteur')\
+            .order_by('-date_visite')
+
     return render(request, 'visiteurs/detail.html', {
         'item': item,
         'visites': visites,
+        'same_nip_count': len(same_nip_pks),
     })
 
 
@@ -1101,3 +1252,43 @@ def benchmark_create_visite(request):
     except Exception as e:
         elapsed = round((time.time() - start) * 1000, 2)
         return JsonResponse({'success': False, 'error': str(e), 'ms': elapsed})
+
+
+@login_required
+def enregistrer_refus_visite(request):
+    """Enregistre les décisions REFUSE_AGENT quand l'agent refuse l'accès."""
+    if request.method != 'POST':
+        return redirect('ajouter_visite')
+    visiteur_nom = request.POST.get('visiteur_nom', '').strip()
+    visiteur_prenom = request.POST.get('visiteur_prenom', '').strip()
+    visiteur_nip = request.POST.get('visiteur_nip', '').strip() or None
+    visiteur_piece = request.POST.get('visiteur_piece', '').strip() or None
+    import html
+    matches_json = html.unescape(request.POST.get('matches_json', '[]'))
+    try:
+        matches = json.loads(matches_json)
+    except (json.JSONDecodeError, TypeError):
+        matches = []
+    from incidents.models import DetectionDecision
+    for m in matches:
+        DetectionDecision.objects.create(
+            visiteur_nom=visiteur_nom,
+            visiteur_prenom=visiteur_prenom,
+            visiteur_nip=visiteur_nip,
+            visiteur_piece=visiteur_piece,
+            decision='REFUSE_AGENT',
+            type_detection=m.get('type', ''),
+            detail_detection=m.get('detail', ''),
+            agent=request.user,
+        )
+    # Alerte pour les correspondances Liste Noire refusées
+    ln_matches = [m for m in matches if m.get('type') == 'Liste noire']
+    if ln_matches:
+        from alertes_et_notifications.models import Alerte
+        for m in ln_matches:
+            Alerte.objects.create(
+                type='LISTE_NOIRE', entite_id=m.get('pk', 0),
+                message=f'🔴 ACCÈS INTERDIT — {visiteur_prenom} {visiteur_nom} refusé par l\'agent — {m.get("detail", "")}',
+            )
+    messages.info(request, f'Accès refusé pour {visiteur_prenom} {visiteur_nom}.')
+    return redirect('ajouter_visite')

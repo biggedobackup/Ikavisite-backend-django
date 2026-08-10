@@ -102,8 +102,8 @@ class Personnel(models.Model):
     email = models.CharField(max_length=255, null=True, blank=True)
     telephone = models.CharField(max_length=50, null=True, blank=True)
     departement = models.ForeignKey(
-        Departement, on_delete=models.SET_NULL,
-        null=True, blank=True, db_column='id_departement'
+        Departement, on_delete=models.PROTECT,
+        null=False, blank=False, db_column='id_departement'
     )
     statut = models.CharField(max_length=50, default='ACTIF')
     created_at = models.DateTimeField(auto_now_add=True, null=True)

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Visites terminées - IKAVISITE{% endblock %}
+{% block title %}Visites Clôturées - IKAVISITE{% endblock %}
 {% block extra_css %}
 <style>
 .vtm>*+*{margin-top:1.5rem}
@@ -48,8 +48,8 @@
   <div class="vtm-header">
     <div>
       <p style="font-size:.75rem;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.14em">Visites</p>
-      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Visites terminées</h1>
-      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Liste des visites terminées.</p>
+      <h1 style="font-size:1.875rem;font-weight:900;color:#0f172a;margin-top:.25rem">Visites Clôturées</h1>
+      <p style="font-size:.875rem;font-weight:500;color:#64748b;margin-top:.25rem">Liste des visites clôturées (terminées + sorties système).</p>
     </div>
     <div class="vtm-actions">
       <a href="{% url 'export_pdf_visites_terminees' %}" class="vtm-btn vtm-btn-secondary" target="_blank">

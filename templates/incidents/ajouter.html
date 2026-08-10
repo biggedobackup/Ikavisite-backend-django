@@ -59,7 +59,7 @@
       <div><label class="ia-label">Type d'incident <span class="ia-required">*</span></label>
         <select class="ia-select" name="type_incident" required>
           <option value="">Sélectionner</option>
-          {% for ti in type_incident_choices %}<option value="{{ ti.pk }}" {% if request.POST.type_incident|stringformat:'s' == ti.pk|stringformat:'s' %}selected{% endif %}>{{ ti.nom }}</option>{% endfor %}
+          {% for ti in type_incident_choices %}<option value="{{ ti.pk }}" data-gravite="{{ ti.gravite_defaut }}" {% if request.POST.type_incident|stringformat:'s' == ti.pk|stringformat:'s' %}selected{% endif %}>{{ ti.nom }}</option>{% endfor %}
         </select>
       </div>
       <div><label class="ia-label">Gravité <span class="ia-required">*</span></label>
@@ -116,6 +116,15 @@
   </form>
 </div>
 <script>
+// Auto-sélection gravité selon type d'incident
+document.querySelector('select[name="type_incident"]').addEventListener('change', function() {
+  var opt = this.options[this.selectedIndex];
+  var gravite = opt.getAttribute('data-gravite');
+  if (gravite) {
+    document.querySelector('select[name="gravite"]').value = gravite;
+  }
+});
+
 (function() {
   var searchInput = document.getElementById('personneSearch');
   var searchBtn = document.getElementById('personneSearchBtn');

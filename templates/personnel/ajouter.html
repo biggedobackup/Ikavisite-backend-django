@@ -49,9 +49,9 @@
         <input class="persa-input" type="text" name="fonction" placeholder="Responsable RH" value="{{ request.POST.fonction|default:'' }}" />
       </div>
       <div>
-        <label class="persa-label">Département</label>
-        <select class="persa-select" name="id_departement">
-          <option value="">Aucun</option>
+        <label class="persa-label">Département <span class="persa-required">*</span></label>
+        <select class="persa-select" name="id_departement" required>
+          <option value="">Sélectionner un département</option>
           {% for d in departements %}
           <option value="{{ d.pk }}" {% if request.POST.id_departement|stringformat:'s' == d.pk|stringformat:'s' %}selected{% endif %}>{{ d.nom }}</option>
           {% endfor %}

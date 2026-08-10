@@ -15,6 +15,10 @@ class ObjetOublie(models.Model):
         'visites.Visite', on_delete=models.SET_NULL,
         null=True, blank=True, db_column='id_visite'
     )
+    visiteur = models.ForeignKey(
+        'visites.Visiteur', on_delete=models.SET_NULL,
+        null=True, blank=True, db_column='id_visiteur', related_name='objets_oublies'
+    )
     departement = models.ForeignKey(
         'entreprise.Departement', on_delete=models.SET_NULL,
         null=True, blank=True, db_column='id_departement'
@@ -42,6 +46,7 @@ class ObjetOublie(models.Model):
             models.Index(fields=['date_trouve']),
             models.Index(fields=['categorie']),
             models.Index(fields=['visite']),
+            models.Index(fields=['visiteur']),
             models.Index(fields=['departement']),
         ]
 

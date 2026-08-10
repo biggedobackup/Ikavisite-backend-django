@@ -231,14 +231,16 @@ def modifier_utilisateur(request, pk):
             item.set_password(new_password)
 
         group_id = request.POST.get('group', '').strip()
-        if group_id:
-            try:
-                grp = Group.objects.get(pk=int(group_id))
-                item.groups.set([grp])
-            except (ValueError, Group.DoesNotExist):
-                pass
-        else:
-            item.groups.clear()
+        # Super admin : rôle non modifiable
+        if not item.is_superuser:
+            if group_id:
+                try:
+                    grp = Group.objects.get(pk=int(group_id))
+                    item.groups.set([grp])
+                except (ValueError, Group.DoesNotExist):
+                    pass
+            else:
+                item.groups.clear()
         item.save()
         HistoriqueAction.log(request, 'MODIFICATION', 'Utilisateur', entite_id=item.pk, details=f'Utilisateur modifié : {item.get_full_name() or item.username}')
         messages.success(request, 'Modification effectuée avec succès.')

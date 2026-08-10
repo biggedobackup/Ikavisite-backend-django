@@ -51,10 +51,10 @@
 
     <h2 class="om-section-title">Informations de l'objet</h2>
     <div class="om-grid" style="margin-top:1.25rem">
-      <div><label class="om-label">Visite</label>
-        <select class="om-select" name="visite">
+      <div><label class="om-label">Visiteur</label>
+        <select class="om-select" name="visiteur">
           <option value="">Sélectionner</option>
-          {% for v in visites %}<option value="{{ v.pk }}" {% if v.pk == item.visite_id %}selected{% endif %}>{{ v.visiteur.nom|default:'-' }} {{ v.visiteur.prenom|default:'' }} ({{ v.date_visite|date:'d/m/Y'|default:'-' }})</option>{% endfor %}
+          {% for v in visiteurs %}<option value="{{ v.pk }}" {% if v.pk == item.visiteur_id %}selected{% endif %}>{{ v.nom }} {{ v.prenom }} (NIP: {{ v.numero_nip|default:'-' }})</option>{% endfor %}
         </select>
       </div>
       <div><label class="om-label">Nom de l'objet <span class="om-required">*</span></label><input class="om-input" type="text" name="nom_objet" value="{{ item.nom_objet }}" required /></div>

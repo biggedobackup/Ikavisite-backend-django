@@ -85,6 +85,10 @@ def ajouter_personnel(request):
             except (ValueError, Departement.DoesNotExist):
                 pass
 
+        if not departement:
+            messages.error(request, 'Veuillez sélectionner un département.')
+            return render(request, 'personnel/ajouter.html', {'departements': _get_departements()})
+
         p = Personnel.objects.create(
             nom=nom,
             prenom=prenom,
@@ -129,6 +133,10 @@ def modifier_personnel(request, pk):
                 departement = Departement.objects.get(pk=int(dept_id))
             except (ValueError, Departement.DoesNotExist):
                 pass
+
+        if not departement:
+            messages.error(request, 'Veuillez sélectionner un département.')
+            return render(request, 'personnel/modifier.html', {'item': item, 'departements': _get_departements()})
 
         item.nom = nom
         item.prenom = prenom

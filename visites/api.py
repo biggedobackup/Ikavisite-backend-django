@@ -556,6 +556,22 @@ def api_create_visite(request, payload: VisiteCreateIn):
     else:
         raise HttpError(400, "Fournissez un visiteur_id ou les données du visiteur (v_nom, v_prenom)")
 
+    # ── Détection Liste Noire / Incidents ═══════════════════════════════════
+    from .views import _detect_matches
+    pre_matches = _detect_matches(
+        visiteur.nom, visiteur.prenom,
+        visiteur.numero_piece or '', visiteur.numero_nip or '',
+        save_detections=False
+    )
+    if any(m.get('severity') == 'BLOCK' for m in pre_matches):
+        block_details = [m['detail'] for m in pre_matches if m.get('severity') == 'BLOCK']
+        raise HttpError(
+            403,
+            '🔴 Accès REFUSÉ — {} {} est inscrit(e) sur la Liste Noire. Motif : {}'.format(
+                visiteur.prenom, visiteur.nom, ' ; '.join(block_details)
+            )
+        )
+
     # ── Vérifier les autres entités ─────────────────────────────────────────
     try:
         TypeVisite.objects.get(id=payload.type_visite_id)
@@ -830,7 +846,7 @@ def api_list_visites_terminees(
 
     - **aujourdhui** : si `true`, filtre uniquement les visites terminées aujourd'hui
     """
-    qs = _base_visite_qs().filter(statut='TERMINE')
+    qs = _base_visite_qs().filter(statut__in=['TERMINE', 'SORTIE_SYSTEME'])
     if aujourdhui:
         qs = qs.filter(date_visite__date=timezone.now().date())
     return qs.order_by('-date_visite', '-id')

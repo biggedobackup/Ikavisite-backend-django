@@ -52,7 +52,7 @@
       <div><label class="im-label">Type d'incident <span class="im-required">*</span></label>
         <select class="im-select" name="type_incident" required>
           <option value="">Sélectionner</option>
-          {% for ti in type_incident_choices %}<option value="{{ ti.pk }}" {% if item.type_incident_id == ti.pk %}selected{% endif %}>{{ ti.nom }}</option>{% endfor %}
+          {% for ti in type_incident_choices %}<option value="{{ ti.pk }}" data-gravite="{{ ti.gravite_defaut }}" {% if item.type_incident_id == ti.pk %}selected{% endif %}>{{ ti.nom }}</option>{% endfor %}
         </select>
       </div>
       <div><label class="im-label">Gravité <span class="im-required">*</span></label>
@@ -105,3 +105,13 @@
   </form>
 </div>
 {% endblock %}
+<script>
+// Auto-sélection gravité selon type d'incident
+document.querySelector('select[name="type_incident"]').addEventListener('change', function() {
+  var opt = this.options[this.selectedIndex];
+  var gravite = opt.getAttribute('data-gravite');
+  if (gravite) {
+    document.querySelector('select[name="gravite"]').value = gravite;
+  }
+});
+</script>
