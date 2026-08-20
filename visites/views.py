@@ -338,6 +338,7 @@ def _save_signature(signature_data, prefix='signature'):
 
 
 def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False, user=None, porte_entree_id=None):
+    from visites.models import DocumentIdentite
     matches = []
     has_block = False
     q_nom = Q(nom__iexact=nom) if nom else Q()
@@ -350,6 +351,7 @@ def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False
     if numero_nip:
         q |= Q(numero_nip__iexact=numero_nip)
 
+    # ═══ 1. Match direct ListeNoire ═══
     for ln in ListeNoire.objects.filter(q, statut='ACTIF').select_related('type_liste_noire'):
         detail = ln.motif or (ln.type_liste_noire.nom if hasattr(ln, 'type_liste_noire') and ln.type_liste_noire else 'Inscrit en liste noire')
         if ln.blocage_automatique:
@@ -369,7 +371,66 @@ def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False
                 created_by=user,
             )
 
-    # ═══ Détection partielle NOM/Prénom → WARN ═══
+    # ═══ 2. Détection croisée ListeNoire ↔ DocumentIdentite ═══
+    # On collecte TOUS les numéros de documents liés au visiteur (via son NIP ou sa pièce)
+    # pour les croiser avec la liste noire.
+    if not has_block:
+        all_piece_numbers = set()
+        if numero_piece:
+            all_piece_numbers.add(numero_piece.lower())
+        if numero_nip:
+            # Chercher tous les DocumentIdentite des visiteurs ayant ce NIP
+            nip_docs = DocumentIdentite.objects.filter(
+                visiteur__numero_nip__iexact=numero_nip,
+                statut='ACTIF'
+            ).values_list('numero_document', flat=True)
+            for nd in nip_docs:
+                all_piece_numbers.add(nd.lower())
+            # Chercher aussi les visiteurs ayant ce NIP via DocumentIdentite
+            # pour récupérer leurs autres pièces
+            nip_vis_ids = DocumentIdentite.objects.filter(
+                numero_document__iexact=numero_nip,
+                statut='ACTIF'
+            ).values_list('visiteur_id', flat=True)
+            if nip_vis_ids:
+                extra_nip_docs = DocumentIdentite.objects.filter(
+                    visiteur_id__in=nip_vis_ids,
+                    statut='ACTIF'
+                ).values_list('numero_document', flat=True)
+                for nd in extra_nip_docs:
+                    all_piece_numbers.add(nd.lower())
+
+        # Vérifier chaque numéro de document collecté contre la ListeNoire
+        for piece_num in all_piece_numbers:
+            if not piece_num:
+                continue
+            for ln in ListeNoire.objects.filter(
+                Q(numero_piece__iexact=piece_num) | Q(numero_nip__iexact=piece_num),
+                statut='ACTIF'
+            ).select_related('type_liste_noire'):
+                # Éviter les doublons avec les matchs directs déjà trouvés
+                if any(m.get('pk') == ln.pk for m in matches):
+                    continue
+                detail = ln.motif or (ln.type_liste_noire.nom if hasattr(ln, 'type_liste_noire') and ln.type_liste_noire else 'Inscrit en liste noire')
+                detail += f' (Document: {piece_num.upper()})'
+                if ln.blocage_automatique:
+                    has_block = True
+                    matches.append({'type': 'Liste noire', 'severity': 'BLOCK', 'nom': ln.nom, 'prenom': ln.prenom, 'detail': detail, 'pk': ln.pk})
+                else:
+                    matches.append({'type': 'Liste noire', 'severity': 'WARN', 'nom': ln.nom, 'prenom': ln.prenom, 'detail': f'{detail} (blocage automatique désactivé)', 'pk': ln.pk})
+                if save_detections and user and porte_entree_id:
+                    from liste_noire.models import DetectionListeNoire
+                    DetectionListeNoire.objects.create(
+                        liste_noire=ln,
+                        porte_entree_id=porte_entree_id,
+                        date_detection=timezone.now(),
+                        confiance='MOYENNE',
+                        statut='ACTIF',
+                        notes=f'Détecté via DocumentIdentite pour {nom} {prenom} (pièce: {piece_num})',
+                        created_by=user,
+                    )
+
+    # ═══ 3. Détection partielle NOM/Prénom → WARN ═══
     if nom and prenom and not has_block:
         # Cherche les entrées LN non capturées par le BLOCK (exact)
         excluded_pks = [m['pk'] for m in matches if m['type'] == 'Liste noire']
@@ -401,7 +462,15 @@ def _detect_matches(nom, prenom, numero_piece, numero_nip, save_detections=False
                     'detail': detail, 'pk': ln.pk,
                 })
 
+    # ═══ 4. Recherche visiteur élargie via DocumentIdentite ═══
     visiteurs = Visiteur.objects.filter(q)
+    # Chercher aussi les visiteurs par numéro de document dans DocumentIdentite
+    if numero_piece:
+        doc_vis_ids = DocumentIdentite.objects.filter(
+            numero_document__iexact=numero_piece
+        ).values_list('visiteur_id', flat=True)
+        if doc_vis_ids:
+            visiteurs = visiteurs | Visiteur.objects.filter(pk__in=doc_vis_ids)
     # Incidents et flag_avertissement
     for inc in Incident.objects.filter(
         Q(visite__visiteur__in=visiteurs) | Q(personne__in=visiteurs)
@@ -492,9 +561,25 @@ def ajouter_visite(request):
                 )
             messages.error(request, '🔴 Accès REFUSÉ — {} {} est inscrit(e) sur la Liste Noire. Motif : {}'.format(v_prenom, v_nom, ' ; '.join(block_details)))
             ctx = _base_ctx()
+            # Chercher un visiteur existant pour afficher photo + détails dans la modale
+            block_visiteur = None
+            if numero_nip:
+                block_visiteur = Visiteur.objects.filter(numero_nip__iexact=numero_nip).first()
+            if not block_visiteur and numero_piece:
+                block_visiteur = Visiteur.objects.filter(numero_piece__iexact=numero_piece).first()
+            visiteur_info = None
+            if block_visiteur:
+                visiteur_info = {
+                    'nom': block_visiteur.nom, 'prenom': block_visiteur.prenom,
+                    'nip': block_visiteur.numero_nip or '',
+                    'piece': (block_visiteur.piece_identite or '') + (' ' + block_visiteur.numero_piece if block_visiteur.numero_piece else ''),
+                    'nationalite': block_visiteur.nationalite or '',
+                    'photo_url': block_visiteur.photo.url if block_visiteur.photo else '',
+                }
             ctx['detection_matches_json'] = json.dumps({
                 'nom': v_nom, 'prenom': v_prenom,
                 'num_piece': numero_nip or numero_piece or '',
+                'visiteur': visiteur_info,
                 'groups': {
                     'liste_noire': [m for m in pre_matches if m['type'] == 'Liste noire'],
                     'vigilance': [m for m in pre_matches if m['type'] == 'Vigilance'],
@@ -510,6 +595,14 @@ def ajouter_visite(request):
             ctx['warn_matches_json'] = json.dumps(warn_matches)
             ctx['warn_nom'] = v_prenom + ' ' + v_nom
             ctx['post_data'] = request.POST
+            # Chercher un visiteur existant pour afficher sa photo + détails
+            warn_visiteur = None
+            if numero_nip:
+                warn_visiteur = Visiteur.objects.filter(numero_nip__iexact=numero_nip).first()
+            if not warn_visiteur and numero_piece:
+                warn_visiteur = Visiteur.objects.filter(numero_piece__iexact=numero_piece).first()
+            if warn_visiteur:
+                ctx['warn_visiteur'] = warn_visiteur
             return render(request, 'visites/ajouter.html', ctx)
 
         genre_choices = {'Homme': 'Homme', 'Femme': 'Femme'}
@@ -581,10 +674,16 @@ def ajouter_visite(request):
         sig_entree = None
         sig_sortie = _save_signature(request.POST.get('signature_sortie_data', ''))
 
+        # ═══ Récupérer le type de document immédiatement + reconduire les infos visiteur ═══
+        doc_type = request.POST.get('v_piece_identite', '').strip() or visiteur.piece_identite or None
+        doc_num = request.POST.get('v_numero_piece', '').strip() or visiteur.numero_piece or None
+
         visite = Visite(
             type_visite_id=request.POST.get('type_visite'),
             visiteur=visiteur,
             genre=visiteur.genre,
+            piece_identite=doc_type,
+            numero_piece=doc_num,
             porte_entree_id=request.POST.get('porte_entree'),
             personnel_id=request.POST.get('personnel') or None,
             departement_id=request.POST.get('departement') or None,
@@ -926,6 +1025,7 @@ def liste_visites_terminees(request):
     genre = request.GET.get('genre', '')
     departement_id = request.GET.get('departement', '')
     type_visite_id = request.GET.get('type_visite', '')
+    statut_filter = request.GET.get('statut', '').strip()
     items = _terminees_qs()
     if query:
         items = items.filter(Q(visiteur__nom__icontains=query) | Q(visiteur__prenom__icontains=query))
@@ -935,6 +1035,8 @@ def liste_visites_terminees(request):
         items = items.filter(personnel__departement_id=departement_id)
     if type_visite_id:
         items = items.filter(type_visite_id=type_visite_id)
+    if statut_filter:
+        items = items.filter(statut=statut_filter)
     items = items.order_by('-date_visite')
     paginator = Paginator(items, 10)
     page_obj = paginator.get_page(request.GET.get('page', 1))
@@ -942,11 +1044,12 @@ def liste_visites_terminees(request):
     departements = Departement.objects.filter(statut='ACTIF')
     types_visite = TypeVisite.objects.filter(statut='ACTIF')
     fp = {k: v for k, v in [('q', query), ('genre', genre),
-                             ('departement', departement_id), ('type_visite', type_visite_id)] if v}
+                             ('departement', departement_id), ('type_visite', type_visite_id),
+                             ('statut', statut_filter)] if v}
     return render(request, 'visites/terminees/liste.html', {
         'page_obj': page_obj, 'page_links': page_links, 'query': query,
         'genre_filter': genre, 'departement_filter': departement_id,
-        'type_visite_filter': type_visite_id,
+        'type_visite_filter': type_visite_id, 'statut_filter': statut_filter,
         'departements': departements, 'types_visite': types_visite,
         'filter_params': urlencode(fp) + '&' if fp else '',
     })

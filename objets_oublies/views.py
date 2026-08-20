@@ -139,9 +139,6 @@ def ajouter_objet_oublie(request):
             visiteur_id=request.POST.get('visiteur') or None,
             visite_id=request.POST.get('visite') or None,
             departement_id=request.POST.get('departement') or None,
-            date_remise=request.POST.get('date_remise', '').strip() or None,
-            personne_recupere=request.POST.get('personne_recupere', '').strip() or None,
-            signature=request.POST.get('signature', '').strip() or None,
             photo_objet=request.POST.get('photo_objet', '').strip() or None,
             created_by=request.user,
         )
@@ -210,12 +207,19 @@ def supprimer_objet_oublie(request, pk):
 def restituer_objet_oublie(request, pk):
     item = get_object_or_404(ObjetOublie, pk=pk)
     if request.method == 'POST':
+        if item.statut == 'RESTITUÉ':
+            messages.warning(request, 'Cet objet a déjà été restitué.')
+            return redirect('liste_objets_oublies')
+        item.personne_recupere = request.POST.get('personne_recupere', '').strip() or None
+        item.signature = request.POST.get('signature', '').strip() or None
+        item.date_remise = timezone.now()
         item.statut = 'RESTITUÉ'
         item.updated_by = request.user
-        item.save()
-        HistoriqueAction.objects.create(utilisateur=request.user, action='MODIFICATION', entite='ObjetOublie', entite_id=item.pk)
-        messages.success(request, 'Objet marqué comme restitué.')
-    return redirect('detection_objets_oublies')
+        item.save(update_fields=['personne_recupere', 'signature', 'date_remise', 'statut', 'updated_by', 'updated_at'])
+        HistoriqueAction.log(request, 'RESTITUTION', 'ObjetOublie', entite_id=item.pk,
+                             details='Objet "{}" restitué à {}'.format(item.nom_objet, item.personne_recupere or '?'))
+        messages.success(request, 'Objet "{}" marqué comme restitué.'.format(item.nom_objet))
+    return redirect('liste_objets_oublies')
 
 
 @login_required

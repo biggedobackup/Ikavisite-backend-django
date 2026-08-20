@@ -3,7 +3,26 @@ from django.db.models import Count, Q
 from django.utils.html import mark_safe
 from django.utils import timezone
 
-from .models import TypeVisite, Visiteur, Visite, VisiteEnCours, VisiteTerminee, VisiteExcedee
+from .models import TypeVisite, Visiteur, Visite, VisiteEnCours, VisiteTerminee, VisiteExcedee, DocumentIdentite
+
+
+class DocumentIdentiteInline(admin.TabularInline):
+    model = DocumentIdentite
+    extra = 0
+    can_delete = True
+    fields = ('_doc_label', 'pays_emetteur', '_dates', 'statut')
+    readonly_fields = ('_doc_label', '_dates')
+    ordering = ('type_document',)
+
+    @admin.display(description='Document')
+    def _doc_label(self, obj):
+        return f'{obj.get_type_document_display()} — {obj.numero_document}'
+
+    @admin.display(description='Délivrance / Expiration')
+    def _dates(self, obj):
+        deliv = obj.date_delivrance.strftime('%d/%m/%Y') if obj.date_delivrance else '—'
+        expir = obj.date_expiration.strftime('%d/%m/%Y') if obj.date_expiration else '—'
+        return f'{deliv} → {expir}'
 
 
 class VisiteInline(admin.TabularInline):
@@ -35,14 +54,18 @@ class TypeVisiteAdmin(admin.ModelAdmin):
 
 @admin.register(Visiteur)
 class VisiteurAdmin(admin.ModelAdmin):
-    inlines = [VisiteInline]
-    list_display = ('nom', 'prenom', 'genre', 'nationalite', 'telephone', '_nb_visites', 'statut')
-    search_fields = ('nom', 'prenom', 'email', 'telephone', 'numero_piece')
+    inlines = [DocumentIdentiteInline, VisiteInline]
+    list_display = ('nom', 'prenom', 'genre', 'nationalite', 'telephone', '_nb_visites', '_nb_docs', 'statut')
+    search_fields = ('nom', 'prenom', 'email', 'telephone', 'numero_piece', 'documents__numero_document')
     list_filter = ('statut', 'genre', 'nationalite')
 
     @admin.display(description='Nb visites')
     def _nb_visites(self, obj):
         return obj.nb_visites
+
+    @admin.display(description='Docs')
+    def _nb_docs(self, obj):
+        return obj.documents.count()
 
 
 class VisiteBaseAdmin(admin.ModelAdmin):
@@ -117,3 +140,15 @@ class VisiteExcedeeAdmin(VisiteBaseAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(statut='EXCEDE')
+
+
+@admin.register(DocumentIdentite)
+class DocumentIdentiteAdmin(admin.ModelAdmin):
+    list_display = ('_visiteur_nom', 'type_document', 'numero_document', 'pays_emetteur', 'date_delivrance', 'date_expiration', 'statut')
+    search_fields = ('numero_document', 'visiteur__nom', 'visiteur__prenom', 'visiteur__numero_nip')
+    list_filter = ('type_document', 'statut', 'pays_emetteur')
+    autocomplete_fields = ('visiteur',)
+
+    @admin.display(description='Visiteur')
+    def _visiteur_nom(self, obj):
+        return str(obj.visiteur)

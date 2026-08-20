@@ -80,7 +80,7 @@
           <p id="scanModalSub" style="font-size:.8125rem;font-weight:500;color:#64748b;margin-top:.5rem;margin-bottom:0">Veuillez patienter pendant l'analyse du document d'identité.</p>
         </div>
         <div class="ika-modal-footer" id="scanModalFooter" style="display:none;justify-content:center">
-          <button type="button" class="vva-btn vva-btn-primary" onclick="closeScanModal()">Fermer</button>
+          <button type="button" class="vva-btn vva-btn-primary" id="scanModalCloseBtn">Fermer</button>
         </div>
       </div>
     </div>
@@ -176,13 +176,13 @@
         <div><label class="vvm-label">Type de document</label>
           <select class="vvm-select" name="v_piece_identite">
             <option value="">Selectionner</option>
-            <option value="CNI" {% if item.visiteur.piece_identite == 'CNI' %}selected{% endif %}>CNI</option>
-            <option value="PASSEPORT" {% if item.visiteur.piece_identite == 'PASSEPORT' %}selected{% endif %}>Passeport</option>
-            <option value="PERMIS" {% if item.visiteur.piece_identite == 'PERMIS' %}selected{% endif %}>Permis de conduire</option>
-            <option value="AUTRE" {% if item.visiteur.piece_identite == 'AUTRE' %}selected{% endif %}>Autre</option>
+            <option value="CNI" {% if item.piece_identite|default:item.visiteur.piece_identite == 'CNI' %}selected{% endif %}>CNI</option>
+            <option value="PASSEPORT" {% if item.piece_identite|default:item.visiteur.piece_identite == 'PASSEPORT' %}selected{% endif %}>Passeport</option>
+            <option value="PERMIS" {% if item.piece_identite|default:item.visiteur.piece_identite == 'PERMIS' %}selected{% endif %}>Permis de conduire</option>
+            <option value="AUTRE" {% if item.piece_identite|default:item.visiteur.piece_identite == 'AUTRE' %}selected{% endif %}>Autre</option>
           </select>
         </div>
-        <div><label class="vvm-label">Numero du document</label><input class="vvm-input" type="text" name="v_numero_piece" value="{{ item.visiteur.numero_piece|default:'' }}" placeholder="Numero" /></div>
+        <div><label class="vvm-label">Numero du document</label><input class="vvm-input" type="text" name="v_numero_piece" value="{{ item.numero_piece|default:item.visiteur.numero_piece|default:'' }}" placeholder="Numero" /></div>
         <div><label class="vvm-label">Numero NIP</label><input class="vvm-input" type="text" name="v_nip" value="{{ item.visiteur.numero_nip|default:'' }}" placeholder="NIP" /></div>
         <div><label class="vvm-label">Pays de delivrance</label>
           <select class="vvm-select" name="v_pays_delivrance">
@@ -665,7 +665,7 @@ function mapDocType(code) {
   var c = code.toUpperCase();
   if (c === 'P' || c === 'PASSPORT' || c.indexOf('PASSPORT') >= 0) return 'PASSEPORT';
   if (c === 'I' || c === 'ID' || c === 'CNI' || c.indexOf('IDENTITY') >= 0 || c.indexOf('NATIONAL') >= 0) return 'CNI';
-  if (c === 'D' || c.indexOf('DRIVER') >= 0 || c.indexOf('PERMIS') >= 0 || c.indexOf('LICENSE') >= 0) return 'PERMIS';
+  if (c === 'D' || c === 'DL' || c.indexOf('DRIVER') >= 0 || c.indexOf('DRIVING') >= 0 || c.indexOf('PERMIS') >= 0 || c.indexOf('LICENSE') >= 0 || c.indexOf('PERMIT') >= 0) return 'PERMIS';
   return 'AUTRE';
 }
 
@@ -674,11 +674,18 @@ window.detectDocType = function(fieldList, result) {
     var f = fieldList.find(function(x) { return x.fieldName === name; });
     return f && f.value != null ? String(f.value) : '';
   };
-  var docClass = get('Document Class Code') || get('DocumentType') || get('Type');
+  var docClass = get('Document Class Code') || get('DocumentClassCode') || get('DocumentType') || get('Type') || get('Document Category') || get('DOCUMENT_CLASS');
   if (docClass) return mapDocType(docClass);
   try {
     var docInfo = result.documentType ? result.documentType() : null;
-    if (docInfo && docInfo.documentName) return mapDocType(docInfo.documentName);
+    if (docInfo) {
+      if (docInfo.documentName) return mapDocType(docInfo.documentName);
+      if (docInfo.documentID) return mapDocType(docInfo.documentID);
+      if (docInfo.name) return mapDocType(docInfo.name);
+    }
+  } catch(e) {}
+  try {
+    if (result.text && result.text.documentName) return mapDocType(result.text.documentName);
   } catch(e) {}
   var rawName = (result.rawResponse && result.rawResponse.documentType && result.rawResponse.documentType.oneCandidate && result.rawResponse.documentType.oneCandidate.documentName) ||
                 (result.rawResponse && result.rawResponse.documentType && result.rawResponse.documentType.result && result.rawResponse.documentType.result.documentType && result.rawResponse.documentType.result.documentType.documentName) || '';
@@ -785,9 +792,16 @@ function scanDocument(dataUrl, sourceImgId) {
   });
 }
 
-function closeScanModal() {
+function closeScanModal(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   document.getElementById('scanModal').style.display = 'none';
+  document.getElementById('scanModalFooter').style.display = 'none';
 }
+// Attacher le listener au bouton Fermer
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('scanModalCloseBtn');
+  if (btn) { btn.addEventListener('click', closeScanModal); }
+});
 
 // ── Vérification mode Hors-Normes / Heures Normales ──
 function checkVisitMode() {

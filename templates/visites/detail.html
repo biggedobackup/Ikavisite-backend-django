@@ -181,8 +181,8 @@
   <section class="vvd-card">
     <h2 class="vvd-section-title">Document d'identite</h2>
     <div class="vvd-grid" style="grid-template-columns:repeat(3,1fr)">
-      <div class="vvd-field"><div class="vvd-field-label">Type de document</div><div class="vvd-field-value">{{ item.visiteur.piece_identite|default:'-' }}</div></div>
-      <div class="vvd-field"><div class="vvd-field-label">Numero du document</div><div class="vvd-field-value">{{ item.visiteur.numero_piece|default:'-' }}</div></div>
+      <div class="vvd-field"><div class="vvd-field-label">Type de document</div><div class="vvd-field-value">{{ item.piece_identite|default:item.visiteur.piece_identite|default:'-' }}</div></div>
+      <div class="vvd-field"><div class="vvd-field-label">Numéro du document</div><div class="vvd-field-value">{{ item.numero_piece|default:item.visiteur.numero_piece|default:'-' }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Numero NIP</div><div class="vvd-field-value">{{ item.visiteur.numero_nip|default:'-' }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Pays de delivrance</div><div class="vvd-field-value">{{ item.visiteur.pays_delivrance|default:'-' }}</div></div>
       <div class="vvd-field"><div class="vvd-field-label">Date de delivrance</div><div class="vvd-field-value">{{ item.visiteur.date_delivrance|default:'-' }}</div></div>

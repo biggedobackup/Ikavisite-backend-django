@@ -84,7 +84,7 @@
           <p id="scanModalSub" style="font-size:.8125rem;font-weight:500;color:#64748b;margin-top:.5rem;margin-bottom:0">Veuillez patienter pendant l'analyse du document d'identité.</p>
         </div>
         <div class="ika-modal-footer" id="scanModalFooter" style="display:none;justify-content:center">
-          <button type="button" class="vva-btn vva-btn-primary" onclick="closeScanModal()">Fermer</button>
+          <button type="button" class="vva-btn vva-btn-primary" id="scanModalCloseBtn">Fermer</button>
         </div>
       </div>
     </div>
@@ -231,6 +231,23 @@
       </div>
     </div>
     <div style="padding:1.25rem 1.5rem">
+      {% if warn_visiteur %}
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;padding:.875rem 1rem;background:#f8fafc;border-radius:1rem;border:1px solid #e2e8f0">
+        {% if warn_visiteur.photo %}
+        <img src="{{ warn_visiteur.photo.url }}" alt="Photo" style="width:3.5rem;height:3.5rem;border-radius:50%;object-fit:cover;border:2px solid #f1f5f9;flex-shrink:0" />
+        {% else %}
+        <div style="width:3.5rem;height:3.5rem;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:1.25rem;color:#94a3b8">{{ warn_visiteur.prenom|first|upper }}{{ warn_visiteur.nom|first|upper }}</div>
+        {% endif %}
+        <div style="min-width:0">
+          <p style="font-size:.875rem;font-weight:700;color:#0f172a;margin:0">{{ warn_visiteur.prenom }} {{ warn_visiteur.nom }}</p>
+          <div style="display:flex;flex-wrap:wrap;gap:.25rem .75rem;margin-top:.25rem">
+            {% if warn_visiteur.numero_nip %}<span style="font-size:.6875rem;font-weight:600;color:var(--primary)">NIP: {{ warn_visiteur.numero_nip }}</span>{% endif %}
+            {% if warn_visiteur.piece_identite %}<span style="font-size:.6875rem;color:#64748b">{{ warn_visiteur.piece_identite }}{% if warn_visiteur.numero_piece %} {{ warn_visiteur.numero_piece }}{% endif %}</span>{% endif %}
+            {% if warn_visiteur.nationalite %}<span style="font-size:.6875rem;color:#94a3b8">{{ warn_visiteur.nationalite }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
       <p style="font-size:.875rem;color:#475569;margin:0 0 1rem">Ce visiteur a un historique d'incidents :</p>
       {% for m in warn_matches %}
       <div style="display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .75rem;background:#f8fafc;border-radius:.75rem;border:1px solid #f1f5f9;margin-bottom:.5rem">
@@ -677,7 +694,7 @@ function mapDocType(code) {
   var c = code.toUpperCase();
   if (c === 'P' || c === 'PASSPORT' || c.indexOf('PASSPORT') >= 0) return 'PASSEPORT';
   if (c === 'I' || c === 'ID' || c === 'CNI' || c.indexOf('IDENTITY') >= 0 || c.indexOf('NATIONAL') >= 0) return 'CNI';
-  if (c === 'D' || c.indexOf('DRIVER') >= 0 || c.indexOf('PERMIS') >= 0 || c.indexOf('LICENSE') >= 0) return 'PERMIS';
+  if (c === 'D' || c === 'DL' || c.indexOf('DRIVER') >= 0 || c.indexOf('DRIVING') >= 0 || c.indexOf('PERMIS') >= 0 || c.indexOf('LICENSE') >= 0 || c.indexOf('PERMIT') >= 0) return 'PERMIS';
   return 'AUTRE';
 }
 
@@ -686,11 +703,18 @@ window.detectDocType = function(fieldList, result) {
     var f = fieldList.find(function(x) { return x.fieldName === name; });
     return f && f.value != null ? String(f.value) : '';
   };
-  var docClass = get('Document Class Code') || get('DocumentType') || get('Type');
+  var docClass = get('Document Class Code') || get('DocumentClassCode') || get('DocumentType') || get('Type') || get('Document Category') || get('DOCUMENT_CLASS');
   if (docClass) return mapDocType(docClass);
   try {
     var docInfo = result.documentType ? result.documentType() : null;
-    if (docInfo && docInfo.documentName) return mapDocType(docInfo.documentName);
+    if (docInfo) {
+      if (docInfo.documentName) return mapDocType(docInfo.documentName);
+      if (docInfo.documentID) return mapDocType(docInfo.documentID);
+      if (docInfo.name) return mapDocType(docInfo.name);
+    }
+  } catch(e) {}
+  try {
+    if (result.text && result.text.documentName) return mapDocType(result.text.documentName);
   } catch(e) {}
   var rawName = (result.rawResponse && result.rawResponse.documentType && result.rawResponse.documentType.oneCandidate && result.rawResponse.documentType.oneCandidate.documentName) ||
                 (result.rawResponse && result.rawResponse.documentType && result.rawResponse.documentType.result && result.rawResponse.documentType.result.documentType && result.rawResponse.documentType.result.documentType.documentName) || '';
@@ -798,9 +822,16 @@ function scanDocument(dataUrl, sourceImgId) {
   });
 }
 
-function closeScanModal() {
+function closeScanModal(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   document.getElementById('scanModal').style.display = 'none';
+  document.getElementById('scanModalFooter').style.display = 'none';
 }
+// Attacher le listener au bouton Fermer
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('scanModalCloseBtn');
+  if (btn) { btn.addEventListener('click', closeScanModal); }
+});
 
 // ── Vérification mode Hors-Normes / Heures Normales ──
 function checkVisitMode() {

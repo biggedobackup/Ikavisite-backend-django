@@ -152,7 +152,7 @@
               <div style="display:flex;width:2.25rem;height:2.25rem;align-items:center;justify-content:center;border-radius:9999px;background:var(--primary-light);font-size:.6875rem;font-weight:900;color:var(--primary);flex-shrink:0">{{ item.visiteur.prenom|first|upper }}{{ item.visiteur.nom|first|upper }}</div>
               <div>
                 <div class="vv-nom">{{ item.visiteur.nom }} {{ item.visiteur.prenom }}</div>
-                <div style="margin-top:.125rem;font-size:.6875rem;font-weight:600;color:#64748b">{{ item.visiteur.piece_identite|default:'' }}{% if item.visiteur.piece_identite and item.visiteur.numero_piece %} - {% endif %}{{ item.visiteur.numero_piece|default:'' }}{% if item.visiteur.piece_identite or item.visiteur.numero_piece %} - {% endif %}{{ item.visiteur.genre|default:'' }}</div>
+                <div style="margin-top:.125rem;font-size:.6875rem;font-weight:600;color:#64748b">{% with doc_type=item.piece_identite|default:item.visiteur.piece_identite %}{% with doc_num=item.numero_piece|default:item.visiteur.numero_piece %}{{ doc_type|default:'' }}{% if doc_type and doc_num %} - {% endif %}{{ doc_num|default:'' }}{% if doc_type or doc_num %} - {% endif %}{% endwith %}{% endwith %}{{ item.visiteur.genre|default:'' }}</div>
               </div>
             </div>
           </td>

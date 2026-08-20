@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Détection Objets oubliés - IKAVISITE{% endblock %}
+{% block title %}Suivi Objets Oubliés - IKAVISITE{% endblock %}
 {% block extra_css %}
 <style>
 .do{min-height:100%;background:#f7f9fc}
@@ -65,8 +65,8 @@
     <div class="do-header">
       <div class="do-header-left">
         <p>Objets oubliés</p>
-        <h1>Détection Objets oubliés</h1>
-        <p>Détection automatique des objets oubliés lors de l'enregistrement des visiteurs.</p>
+        <h1>Suivi Objets Oubliés</h1>
+        <p>Suivi des objets oubliés lors de l'enregistrement des visiteurs.</p>
       </div>
       <div class="do-actions">
         <a href="{% url 'export_pdf_objets_oublies' %}" class="do-btn do-btn-secondary" target="_blank">
@@ -141,7 +141,7 @@
 
     {% else %}
     <div class="do-empty">
-      <p>Aucune détection d'objet oublié pour le moment.</p>
+      <p>Aucun suivi d'objet oublié pour le moment.</p>
     </div>
     {% endif %}
   </div>

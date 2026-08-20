@@ -143,6 +143,11 @@
               {% if perms.objets_oublies.change_objetoublie %}<a href="{% url 'modifier_objet_oublie' item.pk %}" class="oo-action-btn oo-action-btn-edit" title="Modifier">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </a>{% endif %}
+              {% if item.statut == 'NON_RESTITUÉ' and perms.objets_oublies.change_objetoublie %}
+              <button type="button" class="oo-action-btn" style="border-color:rgba(21,128,61,.3);color:#15803d;background:#f0fdf4" title="Restituer" onclick="openRestitutionModal('{{ item.pk }}', '{{ item.nom_objet|escapejs }}', '{{ item.visiteur_id|default:'' }}', '{% if item.visiteur %}{{ item.visiteur.prenom }} {{ item.visiteur.nom }}{% endif %}', '{{ item.visiteur.piece_identite|default:'' }}', '{{ item.visiteur.numero_piece|default:'' }}', '{{ item.visiteur.numero_nip|default:'' }}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              </button>
+              {% endif %}
               <form method="post" action="{% url 'supprimer_objet_oublie' item.pk %}" onsubmit="return confirm('Supprimer &quot;{{ item.nom_objet|escapejs }}&quot; ?')" style="display:inline">
                 {% csrf_token %}
                 {% if perms.objets_oublies.delete_objetoublie %}<button type="submit" class="oo-action-btn oo-action-btn-delete" title="Supprimer">
@@ -182,4 +187,91 @@
     {% endif %}
   </div>
 </div>
+
+<!-- ═══ Modal Restitution ═══ -->
+<div id="restitutionModal" class="ika-modal" style="display:none" onclick="closeRestitutionModal()">
+  <div class="ika-modal-inner" style="max-width:440px" onclick="event.stopPropagation()">
+    <div style="background:#f0fdf4;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:.75rem">
+      <svg style="width:1.5rem;height:1.5rem;color:#15803d;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      <div>
+        <p style="font-size:.9375rem;font-weight:900;color:#15803d;margin:0">Restituer l'objet</p>
+        <p style="font-size:.8125rem;color:#64748b;margin:.125rem 0 0" id="restObjName">-</p>
+      </div>
+    </div>
+    <form id="restitutionForm" method="post" enctype="multipart/form-data" style="padding:1.25rem 1.5rem">
+      {% csrf_token %}
+      <input type="hidden" name="signature" id="restSignatureData" />
+      <div id="restVisiteurInfo" style="display:none;margin-bottom:1rem;padding:.75rem 1rem;background:#f8fafc;border-radius:.75rem;border:1px solid #e2e8f0">
+        <p style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin:0 0 .5rem">Document d'identité</p>
+        <p style="font-size:.875rem;font-weight:700;color:#0f172a;margin:0" id="restVisNom">-</p>
+        <div style="display:flex;flex-wrap:wrap;gap:.25rem .75rem;margin-top:.25rem">
+          <span style="font-size:.75rem;font-weight:600;color:var(--primary)" id="restNip"></span>
+          <span style="font-size:.75rem;color:#64748b" id="restPiece"></span>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem">Personne ayant récupéré l'objet</label>
+        <input class="oo-input" type="text" name="personne_recupere" id="restPersonne" placeholder="Nom et prénom de la personne" required />
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="font-size:.8125rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.5rem">Signature</label>
+        <div id="restSigCanvasWrap" style="border-radius:.75rem;border:2px dashed #e2e8f0;background:#f8fafc;overflow:hidden">
+          <canvas id="restSigCanvas" width="400" height="160" style="display:block;width:100%;touch-action:none;cursor:crosshair"></canvas>
+        </div>
+        <button type="button" onclick="clearRestSignature()" style="margin-top:.5rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff;padding:.375rem .75rem;font-size:.75rem;font-weight:600;color:#64748b;cursor:pointer">Effacer la signature</button>
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <button type="button" onclick="closeRestitutionModal()" style="flex:1;padding:.75rem 1rem;border-radius:.75rem;font-size:.875rem;font-weight:700;border:1px solid #e2e8f0;background:#fff;color:#374151;cursor:pointer">Annuler</button>
+        <button type="submit" style="flex:1;padding:.75rem 1rem;border-radius:.75rem;font-size:.875rem;font-weight:700;border:none;background:#15803d;color:#fff;cursor:pointer">Confirmer la restitution</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+var restSigCanvas = null, restSigCtx = null, restSigDrawing = false;
+function initRestSig() {
+  restSigCanvas = document.getElementById('restSigCanvas');
+  if (!restSigCanvas) return;
+  restSigCtx = restSigCanvas.getContext('2d');
+  restSigCtx.strokeStyle = '#0f172a';
+  restSigCtx.lineWidth = 2.5;
+  restSigCtx.lineCap = 'round';
+  restSigCtx.lineJoin = 'round';
+  restSigCanvas.addEventListener('mousedown', function(e){restSigDrawing=true;var r=this.getBoundingClientRect();restSigCtx.beginPath();restSigCtx.moveTo(e.clientX-r.left,e.clientY-r.top)});
+  restSigCanvas.addEventListener('mousemove', function(e){if(!restSigDrawing)return;var r=this.getBoundingClientRect();restSigCtx.lineTo(e.clientX-r.left,e.clientY-r.top);restSigCtx.stroke()});
+  restSigCanvas.addEventListener('mouseup', function(){restSigDrawing=false});
+  restSigCanvas.addEventListener('mouseleave', function(){restSigDrawing=false});
+  restSigCanvas.addEventListener('touchstart', function(e){e.preventDefault();restSigDrawing=true;var t=e.touches[0],r=this.getBoundingClientRect();restSigCtx.beginPath();restSigCtx.moveTo(t.clientX-r.left,t.clientY-r.top)});
+  restSigCanvas.addEventListener('touchmove', function(e){e.preventDefault();if(!restSigDrawing)return;var t=e.touches[0],r=this.getBoundingClientRect();restSigCtx.lineTo(t.clientX-r.left,t.clientY-r.top);restSigCtx.stroke()});
+  restSigCanvas.addEventListener('touchend', function(){restSigDrawing=false});
+}
+function clearRestSignature() { if(restSigCtx){restSigCtx.clearRect(0,0,restSigCanvas.width,restSigCanvas.height);document.getElementById('restSignatureData').value='';} }
+function openRestitutionModal(pk, nom, visiteurId, visNom, pieceType, pieceNum, nip) {
+  document.getElementById('restObjName').textContent = nom;
+  document.getElementById('restitutionForm').action = '{% url "restituer_objet_oublie" 0 %}'.replace('0', pk);
+  document.getElementById('restPersonne').value = '';
+  var infoDiv = document.getElementById('restVisiteurInfo');
+  if (visNom) {
+    document.getElementById('restVisNom').textContent = visNom;
+    document.getElementById('restNip').textContent = nip ? 'NIP: ' + nip : '';
+    var pieceText = '';
+    if (pieceType) pieceText += pieceType;
+    if (pieceNum) pieceText += (pieceText ? ' ' : '') + pieceNum;
+    document.getElementById('restPiece').textContent = pieceText;
+    document.getElementById('restPersonne').value = visNom;
+    infoDiv.style.display = 'block';
+  } else {
+    infoDiv.style.display = 'none';
+  }
+  clearRestSignature();
+  document.getElementById('restitutionModal').style.display = 'flex';
+  initRestSig();
+}
+function closeRestitutionModal() { document.getElementById('restitutionModal').style.display = 'none'; }
+document.getElementById('restitutionForm').addEventListener('submit', function() {
+  if (restSigCanvas) document.getElementById('restSignatureData').value = restSigCanvas.toDataURL('image/png');
+});
+</script>
+
 {% endblock %}

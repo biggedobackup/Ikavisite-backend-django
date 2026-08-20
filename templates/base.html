@@ -121,6 +121,22 @@ function showDetectionModal(data) {
   stopDetectionAlarm();
   var body = document.getElementById('detectionModalBody');
   body.innerHTML = '';
+  if (data.visiteur) {
+  body.innerHTML +=
+    '<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;padding:.875rem 1rem;background:#f8fafc;border-radius:1rem;border:1px solid #e2e8f0">' +
+      (data.visiteur.photo_url
+        ? '<img src="' + data.visiteur.photo_url + '" alt="Photo" style="width:3.5rem;height:3.5rem;border-radius:50%;object-fit:cover;border:2px solid #f1f5f9;flex-shrink:0" />'
+        : '<div style="width:3.5rem;height:3.5rem;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:1.25rem;color:#94a3b8">' + (data.visiteur.prenom||'').charAt(0).toUpperCase() + (data.visiteur.nom||'').charAt(0).toUpperCase() + '</div>') +
+      '<div style="min-width:0">' +
+        '<p style="font-size:.875rem;font-weight:700;color:#0f172a;margin:0">' + (data.visiteur.prenom||'') + ' ' + (data.visiteur.nom||'') + '</p>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:.25rem .75rem;margin-top:.25rem">' +
+          (data.visiteur.nip ? '<span style="font-size:.6875rem;font-weight:600;color:var(--primary)">NIP: ' + data.visiteur.nip + '</span>' : '') +
+          (data.visiteur.piece ? '<span style="font-size:.6875rem;color:#64748b">' + data.visiteur.piece + '</span>' : '') +
+          (data.visiteur.nationalite ? '<span style="font-size:.6875rem;color:#94a3b8">' + data.visiteur.nationalite + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
   if (data.groups) {
     document.getElementById('detectionModalTitle').textContent = 'Détection de personne';
     document.getElementById('detectionModalSub').textContent = (data.prenom || '') + ' ' + (data.nom || '') + (data.num_piece ? ' — ' + data.num_piece : '');
@@ -138,7 +154,7 @@ function showDetectionModal(data) {
         icon + ' ' + label + '</h4>' +
         cards + '</div>';
     }
-    body.innerHTML =
+    body.innerHTML +=
       buildSection(groups.liste_noire, '🔴 BLOCAGE — Personne inscrite sur la Liste Noire',
         '<svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>',
         {title:'#b91c1c', border:'#fecaca', bg:'#fef2f2'}, 'LISTE_NOIRE') +

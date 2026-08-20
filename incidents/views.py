@@ -126,14 +126,28 @@ def liste_incidents(request):
 
 @login_required
 def recherche_visiteurs_json(request):
-    """Endpoint JSON pour rechercher des visiteurs par nom, prénom, NIP ou numéro de pièce."""
+    """Endpoint JSON pour rechercher des visiteurs par nom, prénom, NIP ou numéro de document."""
     q = request.GET.get('q', '').strip()
     if len(q) < 2:
         return JsonResponse({'results': []})
+
+    from visites.models import DocumentIdentite
+
+    # Recherche directe sur Visiteur
     qs = Visiteur.objects.filter(
         Q(nom__icontains=q) | Q(prenom__icontains=q) |
         Q(numero_piece__icontains=q) | Q(numero_nip__icontains=q)
     ).order_by('nom', 'prenom')[:20]
+
+    # Élargir via DocumentIdentite — chercher les visiteurs par numéro de document
+    doc_visitor_ids = DocumentIdentite.objects.filter(
+        numero_document__icontains=q
+    ).values_list('visiteur_id', flat=True)[:20]
+
+    if doc_visitor_ids:
+        qs = qs | Visiteur.objects.filter(pk__in=doc_visitor_ids).order_by('nom', 'prenom')
+        qs = qs[:20]
+
     results = []
     for v in qs:
         label = f"{v.nom} {v.prenom or ''}"
@@ -142,6 +156,13 @@ def recherche_visiteurs_json(request):
             pieces.append(f"NIP:{v.numero_nip}")
         if v.numero_piece:
             pieces.append(f"Pièce:{v.numero_piece}")
+        # Ajouter les documents liés depuis DocumentIdentite
+        docs = DocumentIdentite.objects.filter(visiteur=v, statut='ACTIF').values_list(
+            'type_document', 'numero_document'
+        )[:5]
+        for td, nd in docs:
+            short_type = td[:4] if td else 'Doc'
+            pieces.append(f"{short_type}:{nd}")
         if pieces:
             label += f" ({', '.join(pieces)})"
         results.append({

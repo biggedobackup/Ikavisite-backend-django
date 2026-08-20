@@ -14,7 +14,7 @@
 .vtm-btn-outline{background:#fff;color:var(--primary);border:1px solid rgba(18,112,184,.2)}
 .vtm-btn-outline:hover{background:var(--primary-light)}
 .vtm-filters{display:grid;gap:.75rem;border-radius:1rem;border:1px solid rgba(226,232,240,.7);background:#fff;padding:1rem;box-shadow:0 14px 35px rgba(15,23,42,.04)}
-@media(min-width:1024px){.vtm-filters{grid-template-columns:1fr 160px 200px 200px auto}}
+@media(min-width:1024px){.vtm-filters{grid-template-columns:1fr 160px 160px 200px 200px auto}}
 .vtm-input{width:100%;border-radius:.75rem;border:1px solid #e2e8f0;padding:.75rem 1rem;font-size:.875rem;font-weight:600;color:#0f172a;outline:none;transition:border-color .15s,box-shadow .15s}
 .vtm-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px #e8f3fc}
 .vtm-input::placeholder{color:#94a3b8;font-weight:500}
@@ -67,6 +67,11 @@
       <option value="Homme" {% if genre_filter == 'Homme' %}selected{% endif %}>Homme</option>
       <option value="Femme" {% if genre_filter == 'Femme' %}selected{% endif %}>Femme</option>
     </select>
+    <select class="vtm-input" name="statut" onchange="this.form.submit()">
+      <option value="">Tous les statuts</option>
+      <option value="TERMINE" {% if statut_filter == 'TERMINE' %}selected{% endif %}>Terminé</option>
+      <option value="SORTIE_SYSTEME" {% if statut_filter == 'SORTIE_SYSTEME' %}selected{% endif %}>Sortie système</option>
+    </select>
     <select class="vtm-input" name="departement" onchange="this.form.submit()">
       <option value="">Tous les departements</option>
       {% for d in departements %}
@@ -91,6 +96,7 @@
           <th>Visiteur</th>
           <th>Type</th>
           <th>Porte</th>
+          <th>Statut</th>
           <th>Date visite</th>
           <th style="text-align:right">Actions</th>
         </tr>
@@ -107,6 +113,11 @@
           </td>
           <td>{{ item.type_visite.nom }}</td>
           <td>{{ item.porte_entree.titre|default:'-' }}</td>
+          {% if item.statut == 'SORTIE_SYSTEME' %}
+          <td><span style="display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .625rem;border-radius:.5rem;font-size:.75rem;font-weight:700;background:#fef3c7;color:#92400e">Sortie système</span></td>
+          {% else %}
+          <td><span style="display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .625rem;border-radius:.5rem;font-size:.75rem;font-weight:700;background:#f0fdf4;color:#16a34a">Terminé</span></td>
+          {% endif %}
           <td style="white-space:nowrap">{{ item.date_visite|date:'d/m/Y' }}</td>
           <td>
             <div class="vtm-action-group">

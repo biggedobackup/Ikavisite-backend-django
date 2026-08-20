@@ -77,8 +77,6 @@
           {% for d in departements %}<option value="{{ d.pk }}" {% if request.POST.departement|stringformat:'s' == d.pk|stringformat:'s' %}selected{% endif %}>{{ d.nom }}</option>{% endfor %}
         </select>
       </div>
-      <div><label class="oa-label">Date remise au propriétaire</label><input class="oa-input" type="datetime-local" name="date_remise" value="{{ request.POST.date_remise|default:'' }}" /></div>
-      <div><label class="oa-label">Personne ayant récupéré</label><input class="oa-input" type="text" name="personne_recupere" value="{{ request.POST.personne_recupere|default:'' }}" placeholder="Nom de la personne" /></div>
       <div><label class="oa-label">Photo de l'objet</label>
         <div class="oa-upload-box">
           <img id="photoPreview" style="display:none;width:6rem;height:6rem;border-radius:.75rem;object-fit:cover;margin:0 auto" />

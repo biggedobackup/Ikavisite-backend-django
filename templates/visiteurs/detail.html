@@ -218,7 +218,7 @@
           <td>{% if v.personnel %}{{ v.personnel.prenom }} {{ v.personnel.nom }}{% else %}-{% endif %}</td>
           <td>{% if v.personnel and v.personnel.departement %}{{ v.personnel.departement.nom }}{% else %}-{% endif %}</td>
           <td>{{ v.porte_entree.titre|default:'-' }}</td>
-          <td>{{ v.visiteur.piece_identite|default:'-' }}</td>
+          <td>{{ v.piece_identite|default:v.visiteur.piece_identite|default:'-' }}</td>
           <td>{% if v.date_visite %}{{ v.date_visite|date:'d/m/Y' }} {{ v.heure_arrivee|time:'H:i' }}{% else %}-{% endif %}</td>
           <td>{% if v.date_depart %}{{ v.date_depart|date:'d/m/Y' }} {{ v.heure_depart|time:'H:i' }}{% else %}-{% endif %}</td>
           <td><span class="vtrd-doc-badge">{{ v.statut }}</span></td>
